@@ -1,12 +1,14 @@
 /**
  * HTTP transport with provenance. Live requests are bounded (timeout, size);
- * recorded mode replays fixture files that store the original response body,
+ * replay answers from a recording that stores the original response body,
  * HTTP status, and retrieval time.
+ *
+ * Browser-safe: no Node built-ins. Reading and writing recording files lives
+ * in fixture-files.ts (Node only).
  */
-import { createHash } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { legacyRedactUrlV1, redactUrl } from './config.js';
+import { sha256 } from '@noble/hashes/sha2.js';
+import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js';
+import { legacyRedactUrlV1, redactUrl } from './defaults.js';
 import type { DataMode } from '../core/types.js';
 
 export interface TransportRequest {
@@ -42,7 +44,7 @@ const bodyText = (req: TransportRequest) => (req.body === undefined ? '' : JSON.
  * authentication or configuration never share entries. Never persisted or logged.
  */
 export function privateRequestKey(req: TransportRequest): string {
-  return createHash('sha256').update(`private-v1\n${req.kind}\n${req.url}\n${bodyText(req)}`).digest('hex');
+  return sha256Hex(`private-v1\n${req.kind}\n${req.url}\n${bodyText(req)}`);
 }
 
 /**
@@ -50,7 +52,7 @@ export function privateRequestKey(req: TransportRequest): string {
  * which keeps transaction hashes and addresses, plus the request body.
  */
 export function fixtureRequestKey(req: TransportRequest): string {
-  return createHash('sha256').update(`fixture-v2\n${req.kind}\n${redactUrl(req.url)}\n${bodyText(req)}`).digest('hex').slice(0, 32);
+  return sha256Hex(`fixture-v2\n${req.kind}\n${redactUrl(req.url)}\n${bodyText(req)}`).slice(0, 32);
 }
 
 /**
@@ -59,10 +61,12 @@ export function fixtureRequestKey(req: TransportRequest): string {
  * every lookup is additionally checked to concern that fixture's own transaction.
  */
 export function legacyFixtureKeyV1(req: TransportRequest): string {
-  return createHash('sha256').update(`${req.kind}\n${legacyRedactUrlV1(req.url)}\n${bodyText(req)}`).digest('hex').slice(0, 24);
+  return sha256Hex(`${req.kind}\n${legacyRedactUrlV1(req.url)}\n${bodyText(req)}`).slice(0, 24);
 }
 
-const sha = (text: string) => createHash('sha256').update(text).digest('hex');
+/** Hex SHA-256 of UTF-8 text (same digest as Node's crypto module). */
+export const sha256Hex = (text: string): string => bytesToHex(sha256(utf8ToBytes(text)));
+const sha = sha256Hex;
 
 export class LiveTransport implements Transport {
   constructor(private opts: { timeoutMs: number; maxBytes: number; userAgent: string; fetchImpl?: typeof fetch }) {}
@@ -114,7 +118,10 @@ async function readLimited(res: Response, maxBytes: number): Promise<string> {
     }
     chunks.push(value);
   }
-  return Buffer.concat(chunks).toString('utf8');
+  const all = new Uint8Array(total);
+  let at = 0;
+  for (const c of chunks) { all.set(c, at); at += c.byteLength; }
+  return new TextDecoder('utf-8').decode(all);
 }
 
 /** On-disk fixture format: one file per transaction, many recorded exchanges. */
@@ -158,67 +165,46 @@ export interface FixtureFile {
 export const RECORDING_FILE_NAME = /^[a-z][a-z0-9-]{1,31}-0x[0-9a-f]{64}\.json$/;
 
 export function fixturePath(dir: string, chain: string, hash: string): string {
-  return join(dir, `${chain}-${hash.toLowerCase()}.json`);
+  return `${dir.replace(/[\\/]+$/, '')}/${chain}-${hash.toLowerCase()}.json`;
 }
 
-export class RecordedTransport implements Transport {
-  private cache = new Map<string, FixtureFile | null>();
-  private dirs: string[];
-  /** One directory, or several separated by commas (searched in order). */
-  constructor(dir: string) { this.dirs = dir.split(',').map((d) => d.trim()).filter(Boolean); }
+/** Whether a parsed recording is a known schema filed under exactly this network and hash. */
+export function isFixtureFor(f: FixtureFile, chain: string, hash: string): boolean {
+  const known = f.schema === FIXTURE_SCHEMA_V1 || f.schema === FIXTURE_SCHEMA_V2 || f.schema === FIXTURE_SCHEMA_V3;
+  return known && f.chain === chain && typeof f.hash === 'string' && f.hash.toLowerCase() === hash.toLowerCase();
+}
 
-  async load(chain: string, hash: string): Promise<FixtureFile | null> {
-    const key = `${chain}:${hash.toLowerCase()}`;
-    if (this.cache.has(key)) return this.cache.get(key)!;
-    try {
-      let text: string | null = null;
-      for (const d of this.dirs) { try { text = await readFile(fixturePath(d, chain, hash), 'utf8'); break; } catch { /* next */ } }
-      if (text === null) throw new Error('not found');
-      const f = JSON.parse(text) as FixtureFile;
-      const known = f.schema === FIXTURE_SCHEMA_V1 || f.schema === FIXTURE_SCHEMA_V2 || f.schema === FIXTURE_SCHEMA_V3;
-      // A fixture must describe exactly the transaction it is filed under.
-      const valid = known && f.chain === chain && typeof f.hash === 'string' && f.hash.toLowerCase() === hash.toLowerCase();
-      this.cache.set(key, valid ? f : null);
-      return valid ? f : null;
-    } catch {
-      this.cache.set(key, null);
-      return null;
-    }
-  }
-
-  /** Bound to a single fixture for the duration of a build. */
-  forFixture(fixture: FixtureFile): Transport {
-    const isV2 = fixture.schema !== FIXTURE_SCHEMA_V1; // v2 and v3 share request keys
-    const fixtureHash = fixture.hash.toLowerCase();
-    const mode: DataMode = fixture.origin === 'synthetic' ? 'synthetic' : 'recorded';
-    const missing = (failure: string): TransportResponse => ({ ok: false, httpStatus: 0, text: '', sha256: sha(''), retrievedAt: fixture.recordedAt, mode, failure });
-    return {
-      send: async (req) => {
-        let key: string;
-        if (isV2) {
-          key = fixtureRequestKey(req);
-        } else {
-          // v1 compatibility: v1 keys erased transaction hashes from explorer URLs.
-          // Only answer explorer requests about this fixture's own transaction, so a
-          // v1 key can never return another transaction's data.
-          if (req.kind === 'explorer' && !req.url.toLowerCase().includes(fixtureHash)) {
-            return missing(NOT_RECORDED);
-          }
-          key = legacyFixtureKeyV1(req);
+/**
+ * A transport that answers only from one recording. A request that is not in
+ * the recording gets a NOT_RECORDED failure; nothing is ever fetched.
+ */
+export function replayTransport(fixture: FixtureFile): Transport {
+  const isV2 = fixture.schema !== FIXTURE_SCHEMA_V1; // v2 and v3 share request keys
+  const fixtureHash = fixture.hash.toLowerCase();
+  const mode: DataMode = fixture.origin === 'synthetic' ? 'synthetic' : 'recorded';
+  const missing = (failure: string): TransportResponse => ({ ok: false, httpStatus: 0, text: '', sha256: sha(''), retrievedAt: fixture.recordedAt, mode, failure });
+  return {
+    send: async (req) => {
+      let key: string;
+      if (isV2) {
+        key = fixtureRequestKey(req);
+      } else {
+        // v1 compatibility: v1 keys erased transaction hashes from explorer URLs.
+        // Only answer explorer requests about this fixture's own transaction, so a
+        // v1 key can never return another transaction's data.
+        if (req.kind === 'explorer' && !req.url.toLowerCase().includes(fixtureHash)) {
+          return missing(NOT_RECORDED);
         }
-        const ex = fixture.exchanges[key];
-        if (!ex) return missing(NOT_RECORDED);
-        return {
-          ok: ex.httpStatus >= 200 && ex.httpStatus < 300 && !ex.failure, httpStatus: ex.httpStatus, text: ex.text,
-          sha256: sha(ex.text), retrievedAt: ex.retrievedAt, mode, ...(ex.failure ? { failure: ex.failure } : {}),
-        };
-      },
-    };
-  }
-
-  async send(): Promise<TransportResponse> {
-    throw new Error('Use forFixture() to bind a recorded transport to a fixture');
-  }
+        key = legacyFixtureKeyV1(req);
+      }
+      const ex = fixture.exchanges[key];
+      if (!ex) return missing(NOT_RECORDED);
+      return {
+        ok: ex.httpStatus >= 200 && ex.httpStatus < 300 && !ex.failure, httpStatus: ex.httpStatus, text: ex.text,
+        sha256: sha(ex.text), retrievedAt: ex.retrievedAt, mode, ...(ex.failure ? { failure: ex.failure } : {}),
+      };
+    },
+  };
 }
 
 /** Wraps a live transport and captures every exchange for writing a fixture. */
@@ -234,14 +220,6 @@ export class RecordingTransport implements Transport {
       httpStatus: res.httpStatus, retrievedAt: res.retrievedAt, ...(res.failure ? { failure: res.failure } : {}), text: res.text,
     };
     return res;
-  }
-
-  async save(dir: string, meta: Omit<FixtureFile, 'schema' | 'exchanges'>): Promise<string> {
-    await mkdir(dir, { recursive: true });
-    const path = fixturePath(dir, meta.chain, meta.hash);
-    const file: FixtureFile = { schema: FIXTURE_SCHEMA_V2, ...meta, exchanges: this.exchanges };
-    await writeFile(path, JSON.stringify(file, null, 1) + '\n');
-    return path;
   }
 }
 

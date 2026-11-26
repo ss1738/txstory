@@ -310,7 +310,8 @@ describe('A (continued). identities, redaction and fixture compatibility', () =>
   });
 
   it('v1 fixtures replay through the legacy key, and the v1 compatibility path cannot answer for another transaction', async () => {
-    const { RecordedTransport, FIXTURE_SCHEMA_V1, legacyFixtureKeyV1 } = await import('../../src/engine/transport.js');
+    const { FIXTURE_SCHEMA_V1, legacyFixtureKeyV1 } = await import('../../src/engine/transport.js');
+    const { RecordedTransport } = await import('../../src/engine/fixture-files.js');
     type Fixture = import('../../src/engine/transport.js').FixtureFile;
     // A v1-format fixture built in memory (synthetic body), keyed exactly as v1 files were.
     const req = explorerReq(TX_A, '/state-changes');
@@ -332,7 +333,7 @@ describe('A (continued). identities, redaction and fixture compatibility', () =>
     const { mkdtempSync, writeFileSync, readFileSync } = await import('node:fs');
     const { tmpdir } = await import('node:os');
     const { join } = await import('node:path');
-    const { RecordedTransport } = await import('../../src/engine/transport.js');
+    const { RecordedTransport } = await import('../../src/engine/fixture-files.js');
     const dir = mkdtempSync(join(tmpdir(), 'txstory-fx-'));
     const { readdirSync } = await import('node:fs');
     const file = readdirSync('fixtures/synthetic').find((f) => f.startsWith('ethereum-'))!;
@@ -345,12 +346,13 @@ describe('A (continued). identities, redaction and fixture compatibility', () =>
     const { mkdtempSync } = await import('node:fs');
     const { tmpdir } = await import('node:os');
     const { join } = await import('node:path');
-    const { RecordingTransport, RecordedTransport, FIXTURE_SCHEMA_V2 } = await import('../../src/engine/transport.js');
+    const { RecordingTransport, FIXTURE_SCHEMA_V2 } = await import('../../src/engine/transport.js');
+    const { RecordedTransport, saveFixtureV2 } = await import('../../src/engine/fixture-files.js');
     const dir = mkdtempSync(join(tmpdir(), 'txstory-rec-'));
     const { t } = echoUpstream();
     const rec = new RecordingTransport(t);
     await rec.send(explorerReq(TX_A, '/logs'));
-    await rec.save(dir, { chain: 'ethereum', hash: TX_A, description: 'test', recordedAt: '2026-01-01T00:00:00Z', recorder: 'test' });
+    await saveFixtureV2(rec, dir, { chain: 'ethereum', hash: TX_A, description: 'test', recordedAt: '2026-01-01T00:00:00Z', recorder: 'test' });
     const rt = new RecordedTransport(dir);
     const fx = (await rt.load('ethereum', TX_A))!;
     expect(fx.schema).toBe(FIXTURE_SCHEMA_V2);

@@ -6,7 +6,8 @@ import { chainKeys, getChain, isChainKey, type ChainKey } from '../core/chains.j
 import { isTxHash } from '../core/hex.js';
 import { assembleStory, type StoryResult } from '../engine/analyze.js';
 import { recordingEndpoints, type ServerConfig } from './config.js';
-import { CachingTransport, FIXTURE_SCHEMA_V1, FIXTURE_SCHEMA_V2, FIXTURE_SCHEMA_V3, LiveTransport, RECORDING_FILE_NAME, RecordedTransport, type FixtureFile, type Transport } from '../engine/transport.js';
+import { CachingTransport, FIXTURE_SCHEMA_V1, FIXTURE_SCHEMA_V2, FIXTURE_SCHEMA_V3, LiveTransport, RECORDING_FILE_NAME, type FixtureFile, type Transport } from '../engine/transport.js';
+import { RecordedTransport } from '../engine/fixture-files.js';
 import type { AssembleOptions } from '../engine/analyze.js';
 import { resolveClient } from './clientIp.js';
 import { recordAnalysis, registerRecordingNetwork, replayRecording, validateRecording, type Recording } from '../engine/recording.js';

@@ -1,7 +1,8 @@
 /** Captured v1 recordings replay without requesting traces they never recorded. Opt-in: npm run test:captured. */
 import { describe, expect, it } from 'vitest';
 import { engineConfigFromEnv } from '../../src/engine/config.js';
-import { readRecording, replayRecording } from '../../src/engine/recording.js';
+import { replayRecording } from '../../src/engine/recording.js';
+import { readRecording } from '../../src/engine/fixture-files.js';
 import { capturedDir } from './dir.js';
 
 describe('captured v1 recordings', () => {

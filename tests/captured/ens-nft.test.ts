@@ -7,7 +7,7 @@ const ENS_CONTRACT = '0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85';
 
 describe('real captured NFT data', () => {
   it('ENS ERC-721 rows compare token ids; ERC-1155 rows compare amounts', async () => {
-    const { RecordedTransport } = await import('../../src/engine/transport.js');
+    const { RecordedTransport } = await import('../../src/engine/fixture-files.js');
     const config = loadConfig({ mode: 'recorded', fixturesDir: capturedDir() });
     const rt = new RecordedTransport(config.fixturesDir);
     const H = '0x7dd83d861260f2807c22392c021b571f3798e3b2699afcceb0378af64e578dc8';

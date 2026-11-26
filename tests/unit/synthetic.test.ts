@@ -9,7 +9,8 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { Story } from '../../src/core/types.js';
 import { engineConfigFromEnv } from '../../src/engine/config.js';
-import { checkReplay, readRecording, replayRecording, storyDigest, type Recording } from '../../src/engine/recording.js';
+import { checkReplay, replayRecording, storyDigest, type Recording } from '../../src/engine/recording.js';
+import { readRecording } from '../../src/engine/fixture-files.js';
 import type { StoryResult } from '../../src/engine/analyze.js';
 import { A, ARB, LARGE, NFT, OP_USER, SEAPORT_BUYER, SEAPORT_SELLER, SWAP, WETH, allCases, ethFee, txHash } from '../synthetic/cases.js';
 

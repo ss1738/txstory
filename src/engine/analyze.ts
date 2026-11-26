@@ -4,7 +4,7 @@ import { decodeLog, decodeTransferBatch, TOPICS } from '../core/events.js';
 import { normalizeAddress, type Address } from '../core/hex.js';
 import type { BuildInput, ExplorerInput, TokenMetaInput } from '../core/inputs.js';
 import type { SourceRecord, Story } from '../core/types.js';
-import { networkName, redactUrl, type EngineConfig, type TraceMode } from './config.js';
+import { networkName, redactUrl, type EngineConfig, type TraceMode } from './defaults.js';
 import { fetchCallTrace, type TraceFetch } from './providers/trace.js';
 import { BlockscoutClient } from './providers/blockscout.js';
 import { decodeAbiString, decodeUint8, parseBlock, parseReceipt, parseTx, RpcClient, type RpcCall } from './providers/rpc.js';

@@ -16,7 +16,9 @@ import { parseLookupInput } from '../core/lookupInput.js';
 import type { Story } from '../core/types.js';
 import { analyzeTransaction, type AssembleOptions, type StoryResult } from '../engine/analyze.js';
 import { ENGINE_VERSION, engineConfigFromEnv, loadChainFile, redactUrl, type EngineConfig } from '../engine/config.js';
-import { checkReplay, readRecording, recordAnalysis, replayRecording, validateRecording, writeRecording, type Recording } from '../engine/recording.js';
+import { recordAnalysis, replayRecording, validateRecording, type Recording } from '../engine/recording.js';
+import { reconstruct, type ReconstructionReport } from '../engine/reconstruct.js';
+import { readRecording, writeRecording } from '../engine/fixture-files.js';
 import { LiveTransport } from '../engine/transport.js';
 
 export const EXIT = {
@@ -284,26 +286,35 @@ async function cmdReplay(pos: string[], f: Flags, io: Io): Promise<number> {
   loadChains(f, io);
   const rec = await openRecording(path);
   const userAbi = loadAbis(f);
-  const result = await replayRecording(rec, engineConfig(f, io), userAbi ? { userAbi } : {});
-  const check = checkReplay(rec, result);
-  const differs = check.sameOutput === false || check.sameEvidence === false;
+  const { report, result } = await reconstruct(rec, engineConfig(f, io), userAbi ? { userAbi } : {});
+  const check = report.check;
+  const differs = report.verdict === 'differs';
   if (has(f, 'json')) {
-    json(io, 'replay', { ok: result.kind === 'ok' && !differs, check, ...(result.kind === 'ok' ? { story: result.story } : { error: { code: result.kind, message: result.message } }) });
+    json(io, 'replay', { ok: result.kind === 'ok' && !differs, check, report, ...(result.kind === 'ok' ? { story: result.story } : { error: { code: result.kind, message: result.message } }) });
   } else {
-    io.out(`Recording: ${rec.chain} ${rec.hash} (${rec.schema}${rec.engine ? `, recorded by TxStory ${rec.engine.version}` : ''}; ${Object.keys(rec.exchanges).length} exchanges; offline replay)`);
-    io.out(`Same evidence: ${check.sameEvidence ?? 'unknown (no recorded output)'} · Same output: ${check.sameOutput ?? 'unknown (no recorded output)'}`);
-    if (differs && rec.output?.story && result.kind === 'ok') {
-      const c = compareStories(rec.output.story, result.story);
-      io.out(c.summary);
-      for (const d of c.differences.slice(0, 20)) io.out(`  ${d.area}: ${d.subject}: ${d.a ?? 'none'} → ${d.b ?? 'none'}${d.explanation ? ` (${d.explanation})` : ''}`);
-    } else if (differs) {
-      io.out(`Output digest ${check.recordedDigest} → ${check.replayDigest}. Record with --embed-story to get a field-by-field explanation, or compare two \`explain --json\` outputs.`);
-    }
+    io.out(renderReport(report));
     if (result.kind === 'ok') io.out('\n' + renderStory(result.story));
     else io.err(`${result.kind}: ${result.message}`);
   }
   if (result.kind !== 'ok') return resultExit(result, false);
   return differs ? EXIT.incomplete : EXIT.ok;
+}
+
+/** Text form of a reconstruction report (the browser shows the same fields). */
+function renderReport(r: ReconstructionReport): string {
+  const rec = r.recording;
+  const lines = [
+    `Recording: ${rec.network} ${rec.hash} (${rec.schema}${rec.engineVersion ? `, recorded by TxStory ${rec.engineVersion}` : ''}; ${rec.exchanges.total} exchanges; offline replay)`,
+    `Origin: ${rec.origin} · recorded ${rec.recordedAt}${rec.description ? ` · ${rec.description}` : ''}`,
+    `Same evidence: ${r.check.sameEvidence ?? 'unknown (no recorded output)'} · Same output: ${r.check.sameOutput ?? 'unknown (no recorded output)'} · Rebuilt by TxStory ${r.engine.version}`,
+  ];
+  if (r.missing.length) lines.push(`Not in the recording (${r.missing.length}): ${r.missing.slice(0, 8).map((m) => `${m.provider} ${m.method}`).join('; ')}${r.missing.length > 8 ? '; …' : ''}`);
+  if (r.differences) {
+    lines.push(r.differences.summary);
+    for (const d of r.differences.differences.slice(0, 20)) lines.push(`  ${d.area}: ${d.subject}: ${d.a ?? 'none'} → ${d.b ?? 'none'}${d.explanation ? ` (${d.explanation})` : ''}`);
+  }
+  if (r.verdict !== 'reproduced') for (const n of r.notes.slice(0, -1)) lines.push(`Note: ${n}`);
+  return lines.join('\n');
 }
 
 /** A story from: a story JSON, `explain --json` / API output, a recording with an embedded story, or any recording (replayed offline). */

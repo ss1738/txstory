@@ -9,7 +9,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { AbiLibrary } from '../../src/core/abi.js';
 import type { Story } from '../../src/core/types.js';
 import { engineConfigFromEnv } from '../../src/engine/config.js';
-import { checkReplay, readRecording, replayRecording, type Recording } from '../../src/engine/recording.js';
+import { checkReplay, replayRecording, type Recording } from '../../src/engine/recording.js';
+import { readRecording } from '../../src/engine/fixture-files.js';
 
 const DIR = 'fixtures/devnet';
 const expected = JSON.parse(readFileSync(`${DIR}/expected.json`, 'utf8')) as {

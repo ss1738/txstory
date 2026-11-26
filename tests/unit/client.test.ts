@@ -5,7 +5,7 @@ import { buildEvidenceBundle, buildStoryCardSvg, xmlEscape } from '../../src/cli
 import { parseRoute } from '../../src/client/router.js';
 import { assembleStory } from '../../src/engine/analyze.js';
 import { loadConfig } from '../../src/server/config.js';
-import { RecordedTransport } from '../../src/engine/transport.js';
+import { RecordedTransport } from '../../src/engine/fixture-files.js';
 import type { Story } from '../../src/core/types.js';
 
 const H = '0xfeb89d8c5b4ec361b7e3bd004eef2b156f0d4a9f39515d07377a357935891eff'; // synthetic, 80 token movements (fixtures/synthetic)

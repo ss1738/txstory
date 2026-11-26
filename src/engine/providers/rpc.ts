@@ -1,8 +1,9 @@
+import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js';
 import type { RpcBlockInput, RpcReceiptInput, RpcTxInput } from '../../core/inputs.js';
 import { isAddress } from '../../core/hex.js';
 import { cleanUntrusted } from '../../core/text.js';
 import type { Transport, TransportResponse } from '../transport.js';
-import type { RpcEndpoint } from '../config.js';
+import type { RpcEndpoint } from '../defaults.js';
 import { arr, get, isObj, parseJson, str, type Json } from './json.js';
 
 export interface RpcCall<T> {
@@ -118,17 +119,19 @@ export function parseBlock(v: Json): RpcBlockInput | null {
 export function decodeAbiString(hex: string): string | null {
   const clean = hex.replace(/^0x/, '');
   if (!clean || clean.length % 64 !== 0) return null;
-  const buf = Buffer.from(clean, 'hex');
+  if (!/^[0-9a-fA-F]*$/.test(clean)) return null;
+  const buf = hexToBytes(clean);
+  const utf8 = (b: Uint8Array) => new TextDecoder('utf-8').decode(b);
   if (buf.length === 32) {
     const nul = buf.indexOf(0);
-    return buf.subarray(0, nul === -1 ? 32 : nul).toString('utf8') || null;
+    return utf8(buf.subarray(0, nul === -1 ? 32 : nul)) || null;
   }
   if (buf.length < 64) return null;
-  const offset = Number(BigInt('0x' + buf.subarray(0, 32).toString('hex')));
+  const offset = Number(BigInt('0x' + bytesToHex(buf.subarray(0, 32))));
   if (!Number.isSafeInteger(offset) || offset + 32 > buf.length) return null;
-  const len = Number(BigInt('0x' + buf.subarray(offset, offset + 32).toString('hex')));
+  const len = Number(BigInt('0x' + bytesToHex(buf.subarray(offset, offset + 32))));
   if (!Number.isSafeInteger(len) || len > 1024 || offset + 32 + len > buf.length) return null;
-  return buf.subarray(offset + 32, offset + 32 + len).toString('utf8');
+  return utf8(buf.subarray(offset + 32, offset + 32 + len));
 }
 
 export function decodeUint8(hex: string): number | null {

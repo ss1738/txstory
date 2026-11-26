@@ -13,7 +13,8 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { keccakHex } from '../src/core/hex.js';
 import { engineConfigFromEnv, type EngineConfig } from '../src/engine/config.js';
-import { recordAnalysis, writeRecording } from '../src/engine/recording.js';
+import { recordAnalysis } from '../src/engine/recording.js';
+import { writeRecording } from '../src/engine/fixture-files.js';
 import type { Transport, TransportRequest, TransportResponse } from '../src/engine/transport.js';
 import { allCases, hexQ, word, type SyntheticCase } from '../tests/synthetic/cases.js';
 
