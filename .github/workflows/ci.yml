@@ -101,6 +101,6 @@ jobs:
           fi
           docker run -d --name txstory-ci -e TXSTORY_MODE=recorded -p 127.0.0.1:8787:8787 txstory:ci
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:8787/api/health && break; sleep 1; done
-          curl -sf http://127.0.0.1:8787/api/example/ethereum/0xec893ce03b8b8ef2d5e0d5edb9db9f63ad0972e2a6845504bc31cca395869804 > /dev/null
-          curl -sf http://127.0.0.1:8787/tx/ethereum/0xec893ce03b8b8ef2d5e0d5edb9db9f63ad0972e2a6845504bc31cca395869804 | grep -q 'id="root"'
+          curl -sf http://127.0.0.1:8787/api/example/ethereum/0xefb65ab1ab71b94063c0ee8e8c7bdde47b808c19f4e653ed931e3006f4983112 > /dev/null
+          curl -sf http://127.0.0.1:8787/tx/ethereum/0xefb65ab1ab71b94063c0ee8e8c7bdde47b808c19f4e653ed931e3006f4983112 | grep -q 'id="root"'
           docker stop txstory-ci && test "$(docker inspect txstory-ci --format '{{.State.ExitCode}}')" = "0"

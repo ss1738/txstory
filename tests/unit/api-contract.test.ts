@@ -2,7 +2,7 @@
  * The HTTP API matches its OpenAPI contract, and every example in docs/api.md
  * runs with the documented status. Recorded mode: no network.
  */
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -83,3 +83,14 @@ describe('OpenAPI contract', () => {
     expect(await (await fetch(`${base}/api/openapi.json`)).json()).toEqual(JSON.parse(JSON.stringify(OPENAPI)));
   });
 });
+
+describe('CI workflow references', () => {
+  it('only references transactions whose recordings ship with the repository', () => {
+    const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
+    const shipped = new Set(['fixtures/synthetic', 'fixtures/devnet'].flatMap((d) => readdirSync(d)).map((f) => /0x[0-9a-f]{64}/.exec(f)?.[0]).filter(Boolean));
+    const referenced = [...new Set(workflow.match(/0x[0-9a-f]{64}/g) ?? [])];
+    expect(referenced.length).toBeGreaterThan(0);
+    for (const h of referenced) expect(shipped.has(h), h).toBe(true);
+  });
+});
+

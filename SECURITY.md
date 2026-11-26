@@ -23,9 +23,9 @@ Please report vulnerabilities **privately**. Don't open a public issue.
 
 - **Intended channel:** GitHub private vulnerability reporting on this
   repository ("Security" tab → "Report a vulnerability").
-  - **Status:** this must be enabled by the repository owner in the repository
-    settings once the repository is published. It is **not** enabled yet,
-    because the repository is not public yet.
+  - **Status:** enabled on the public repository `ss1738/txstory` (enabled
+    2026-11-27). Copies or forks of this repository have their own settings, so
+    check that the "Report a vulnerability" button is present.
   - **If the option is not available:** open a minimal public issue that asks
     for a private contact, without any details.
 - **What to include:** affected version or commit, interface (browser, CLI, API
