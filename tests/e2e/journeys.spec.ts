@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { axe } from './helpers.js';
 import { A } from '../synthetic/cases.js';
 
 // All examples are SYNTHETIC (fixtures/synthetic, see tests/synthetic/cases.ts) or local
@@ -15,18 +15,6 @@ const NFT_DISAGREE = '0x782827594208f3d989eb6355da47186dfb09cbdc50d4499a6af1b697
 const WRAP_UNINDEXED = '0xe558259f8db603a729cb2a6ff7c250c08b20c16faa7b110d9f85d85f59cb2f94';
 const BASE_403 = '0xce4d4c3bded0220d6e5d7a6f1589edf8bbf4281a3e434579b19dd55e97ac4712';
 const TAXT_CONTRACT = A.taxToken;
-const axePath = createRequire(import.meta.url).resolve('axe-core/axe.min.js');
-
-async function axe(page: Page) {
-  await page.addScriptTag({ content: readFileSync(axePath, 'utf8') });
-  return page.evaluate(async () => {
-    // @ts-expect-error injected global
-    const r = await window.axe.run(document, { resultTypes: ['violations'] });
-    return r.violations.filter((v: { impact: string }) => v.impact === 'serious' || v.impact === 'critical')
-      .map((v: { id: string; nodes: unknown[] }) => `${v.id} (${v.nodes.length})`);
-  });
-}
-
 test.describe('lookup', () => {
   test('home lists examples with their data origin and explains the evidence legend', async ({ page }) => {
     await page.goto('/');
@@ -259,5 +247,18 @@ test.describe('cross-check scope and multi-transaction sessions', () => {
     await page.goBack(); await page.goBack();
     await expect(page.locator('.hash-row')).toContainText(A);
     await expect(page.locator('.story-title')).toContainText('TAXT');
+  });
+});
+
+test.describe('open a recording (server mode)', () => {
+  test('a downloaded recording is rebuilt in the browser without calling the API', async ({ page, request }) => {
+    const rec = await (await request.get(`/api/recording/ethereum/${SWAP}`)).text();
+    await page.goto('/open');
+    const apiCalls: string[] = [];
+    page.on('request', (r) => { if (new URL(r.url()).pathname.startsWith('/api/')) apiCalls.push(r.url()); });
+    await page.setInputFiles('#recording-file', { name: 'swap.recording.json', mimeType: 'application/json', buffer: Buffer.from(rec) });
+    await expect(page.getByTestId('reconstruction')).toContainText('Reproduced');
+    await expect(page.locator('.story-title')).toBeVisible();
+    expect(apiCalls).toEqual([]);
   });
 });

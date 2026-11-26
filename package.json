@@ -1,6 +1,6 @@
 {
   "name": "txstory",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
@@ -17,6 +17,8 @@
     "dev:client": "vite",
     "build": "npm run typecheck && vite build && tsc -p tsconfig.server.json",
     "start": "node dist/node/server/index.js",
+    "build:site": "npm run typecheck && tsx scripts/build-site.ts",
+    "site:preview": "vite preview --outDir ../../dist/site --host 127.0.0.1 --port 4173 --strictPort",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.server.json --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",

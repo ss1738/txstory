@@ -41,31 +41,31 @@ verification), and it says so in every output.
 
 - **Node.js 22 or later, and npm.** The lockfile pins every dependency, so
   install with `npm ci`.
+- **No API keys, accounts or global tools.** TxStory is not published to npm or
+  a container registry; it runs from a clone of this repository.
 - **Optional:**
   - Docker, for the container;
   - Chrome or Chromium, for the browser test suite;
   - Python 3, for the study kit scripts;
   - Foundry (`anvil`, `cast`, `forge`), only to regenerate the devnet recordings
     or ABI test vectors.
-- **No API keys are needed.**
 
-## Try it in one minute (offline, no API keys)
+## Quick start (offline, no API keys)
 
 ```bash
-git clone <this repository> txstory && cd txstory
+git clone https://github.com/ss1738/txstory.git && cd txstory
 npm ci
-npx tsx src/cli/main.ts replay fixtures/devnet/anvil-0xdce671e4526d6d277669b28b2a9108c3f291951eb893a8d716101d94a2640359.json
+npm run -s txstory -- replay fixtures/devnet/anvil-0xdce671e4526d6d277669b28b2a9108c3f291951eb893a8d716101d94a2640359.json
 ```
 
-This replays a real execution recorded on a local anvil devnet. In it, a contract
-pays 1 ETH to one recipient and sends 1 ETH into a call that reverts inside a
-`try/catch`. Actual output:
+This rebuilds an analysis from a recording of a real execution on a local anvil
+devnet. In it, a contract pays 1 ETH to one recipient and sends 1 ETH into a call
+that reverts inside a `try/catch`. Nothing is fetched. Actual output (abridged):
 
 ```text
-Same evidence: true · Same output: true
-
-Anvil devnet · 0xdce671e4526d6d277669b28b2a9108c3f291951eb893a8d716101d94a2640359
-Succeeded · block 5 · 2026-11-26T14:22:27.000Z · recorded data · stage full
+Recording: anvil 0xdce671e4526d6d277669b28b2a9108c3f291951eb893a8d716101d94a2640359 (txstory-fixture-v3, recorded by TxStory 0.3.0; 5 exchanges; offline replay)
+Origin: local-devnet · recorded 2026-11-26T17:02:58.713Z · Devnet: payAndTry
+Same evidence: true · Same output: true · Rebuilt by TxStory 0.4.0
 …
 Net balance changes (exact):
   0x0000…0000                  +0.000000000000043844 ETH
@@ -78,48 +78,91 @@ Warnings:
   - 1 native transfer(s) inside execution were rolled back by a failed call and are not counted as balance changes (see the call trace).
 ```
 
-The node's own state agrees with these balance changes, and
-`tests/unit/devnet.test.ts` checks that against `cast balance`.
+"Same evidence" and "Same output" compare the rebuilt analysis with digests
+stored in the recording. The node's own state agrees with these balance
+changes; `tests/unit/devnet.test.ts` checks that against `cast balance`.
 
-## Example data
+`npm run -s txstory -- <command>` is the CLI from source. After `npm run build`,
+`node dist/node/cli/main.js <command>` runs the compiled CLI, and `npm link`
+puts a `txstory` command on your PATH if you want one. The examples below write
+`txstory` for short.
 
-The repository ships two kinds of recordings, and every output says which one
-it is.
+## Kinds of data
 
-- **`fixtures/devnet/`:** real execution on a local anvil node run by this
-  project, with expected values read from the node.
-- **`fixtures/synthetic/`:** generated responses that exercise specific behaviour
-  (explorer refusals, pagination, L2 fees, NFT id disagreement and more). They
-  are **not real transactions or provider data**, and the UI labels them
-  "Synthetic example".
+Every story and recording says which kind it is.
 
-Recordings captured from public providers are not distributed, because their
-redistribution terms are unresolved (see [DATA_PROVENANCE.md](DATA_PROVENANCE.md)).
-`txstory record` makes your own.
+| Kind | Where it comes from | Real chain data? |
+|---|---|---|
+| **Live** | Fetched now from the RPC nodes and explorer you configure | Yes, as reported by those providers |
+| **Local devnet** (`fixtures/devnet/`) | Recordings of transactions this project executed on a local anvil node, with expected values read from the node | Real EVM execution on a private test chain |
+| **Synthetic** (`fixtures/synthetic/`) | Responses written to exercise specific behaviour (explorer refusals, pagination, L2 fees, NFT id disagreement and more); endpoints use the reserved `.invalid` domain | No. Labelled "Synthetic example" everywhere |
+| **Your recordings** | `txstory record`, or "Download recording" on a story page | Whatever was captured, labelled `captured` |
+
+Recordings captured from public providers are not distributed with the
+repository, because their redistribution terms are unresolved (see
+[DATA_PROVENANCE.md](DATA_PROVENANCE.md)).
+
+## Recordings: capture, share, rebuild
+
+A recording holds every provider response one analysis used, with credentials
+removed from URLs, plus digests of the evidence and of the result.
+
+```bash
+txstory record ethereum 0x<hash> -o tx.json     # live analysis, saved
+txstory replay tx.json                          # rebuild offline on any machine
+txstory replay tx.json --json                   # the same, with a machine-readable report
+```
+
+The browser does the same: **Open recording** in the web UI (or on the static
+site) reads a local file in the page, rebuilds the analysis with the same engine,
+and reports:
+
+- what was captured (responses, providers, origin, recording time);
+- requests the recording cannot answer, shown as missing data and never fetched;
+- which engine version recorded it and which rebuilt it;
+- whether the evidence and output digests match, and what a mismatch means;
+- field-level differences when the recording embeds its original story
+  (`record --embed-story`).
+
+The file is not uploaded. What rebuilding does **not** do: it does not
+re-execute EVM code, and it does not verify chain history. The recorded
+responses are trusted as captured. Details: [docs/formats.md](docs/formats.md).
 
 ## Use it
 
-**Browser:**
+**Browser (local server):**
 
 ```bash
-npm run build && npm start                          # http://127.0.0.1:8787, live public providers
-TXSTORY_MODE=recorded npm start                     # offline: only the example recordings
-npm run dev                                         # development (API :8787 + Vite :5173)
+npm run build
+TXSTORY_MODE=recorded npm start     # http://127.0.0.1:8787, offline: examples and opened recordings only
+npm start                           # live lookups through the configured providers
+npm run dev                         # development (API :8787 + Vite :5173)
 ```
 
 Paste a hash or an explorer link. The Evidence panel has Completeness, Logs,
 Call data (with ABI decoding), Call trace, Participants and Sources tabs.
 
+**Static site (no server):**
+
+```bash
+npm run build:site                  # writes dist/site
+npm run site:preview                # http://127.0.0.1:4173
+```
+
+The static site rebuilds the shipped example recordings in the browser, opens
+local recordings, and documents installation. It cannot look up live
+transactions and does not ask for an RPC URL. It is not deployed anywhere by
+this project; `dist/site` can be served by any static file host that falls back
+to `404.html` for unknown paths.
+
 **CLI** ([docs/cli.md](docs/cli.md)):
 
 ```bash
-npm run build      # then `node dist/node/cli/main.js …`, `npx tsx src/cli/main.ts …`, or `npm link` for `txstory`
-txstory explain ethereum 0xec893ce03b8b8ef2d5e0d5edb9db9f63ad0972e2a6845504bc31cca395869804
+txstory explain ethereum 0x<hash>
 txstory explain https://eth.blockscout.com/tx/0x… --json --strict
 txstory explain ethereum 0x… --abi MyContract.json --rpc http://127.0.0.1:8545
-txstory record ethereum 0x… -o tx.json && txstory replay tx.json
 txstory compare before.json after.json
-txstory decode revert --data 0x4e487b71…11
+txstory decode revert --data 0x4e487b710000000000000000000000000000000000000000000000000000000000000011
 ```
 
 The CLI keeps its output scriptable:
@@ -138,7 +181,7 @@ curl -s "http://127.0.0.1:8787/api/recording/ethereum/0x…" > tx.recording.json
 ```
 
 **Library** ([docs/engine.md](docs/engine.md), runnable example in
-[examples/library/explain.ts](examples/library/explain.ts)):
+[examples/library/explain.ts](examples/library/explain.ts): `npx tsx examples/library/explain.ts`):
 
 ```ts
 import { analyzeTransaction, engineConfigFromEnv, LiveTransport } from './src/engine/index.js';
@@ -148,7 +191,11 @@ const r = await analyzeTransaction('ethereum', hash, transport, config);
 if (r.kind === 'ok') console.log(r.story.ledger, r.story.completeness);
 ```
 
-## Networks, providers and what they are needed for
+## Live analysis: what providers you need
+
+Live analysis is the only mode that uses the network. With no configuration it
+uses the public endpoints below. They are best-effort services run by others,
+so for anything beyond trying it out, point TxStory at a node you control.
 
 | Network | Key | Default RPCs (public, best-effort) | Explorer (optional) |
 |---|---|---|---|
@@ -181,10 +228,11 @@ Fee models: Ethereum (burned base fee, priority fee, blob fee), OP Stack
 | ERC-20, ERC-721, ERC-1155 | Transfer/Approval/TransferSingle/TransferBatch/ApprovalForAll events and common calls (balance movements come from these) |
 | WETH-style | Deposit/Withdrawal (wrapped native) |
 | Uniswap-style pools | V2 Swap/Sync/Mint/Burn, V3 Swap, V4 Swap (and forks with identical signatures) |
-| Seaport | OrderFulfilled/OrdersMatched/OrderCancelled with an evidence-backed interpretation (the worked example for contributors) |
+| Seaport | OrderFulfilled/OrdersMatched/OrderCancelled with an evidence-backed interpretation |
 | Solidity built-ins | `Error(string)`, `Panic(uint256)` with named panic codes |
 
-Add your own ABIs at runtime with `--abi`. To add a decoder module, see
+Add your own ABIs at runtime with `--abi`. To add a decoder module, start from
+the runnable example `npx tsx examples/decoder/split.ts` and see
 [docs/extending.md](docs/extending.md).
 
 ## Known limitations
@@ -204,6 +252,9 @@ Add your own ABIs at runtime with `--abi`. To add a decoder module, see
 - **Older recordings (schema v1/v2)** did not request traces, and some predate
   the explorer's `/summary` endpoint. Replay reports such requests as "not
   captured in this recording" instead of fetching them.
+- **Rebuilding is not verification.** A rebuilt analysis that matches its
+  recording shows the analysis is deterministic over those responses. It says
+  nothing about whether the responses were true.
 - **One server instance.** Rate limits and caches are in memory.
 - **Usability is unmeasured.** A study kit exists in `study/`, but no
   participant sessions have been run.

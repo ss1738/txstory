@@ -34,7 +34,7 @@ export interface EngineConfig {
   trace: TraceMode;
 }
 
-export const ENGINE_VERSION = '0.3.0';
+export const ENGINE_VERSION = '0.4.0';
 export const USER_AGENT = `TxStory/${ENGINE_VERSION} (+read-only transaction explainer)`;
 
 /** Public endpoints. Recorded fixtures were captured against exactly these URLs. */

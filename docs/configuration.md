@@ -1,6 +1,6 @@
 # Configuration reference
 
-All settings are optional environment variables. See [.env.example](.env.example).
+All settings are optional environment variables. See [.env.example](../.env.example).
 
 | Variable | Default | Purpose |
 |---|---|---|

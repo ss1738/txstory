@@ -6,17 +6,20 @@ honesty about uncertainty.
 
 ## Setup
 
-Requirements: Node.js 22 (see `engines`) and Python 3 (for the study kit
-checks). Chrome or Chromium is needed for browser tests. Foundry is needed only
-to regenerate devnet recordings or ABI vectors.
+Requirements: Node.js 22 or later (see `engines`; CI pins the exact version in
+`.github/workflows/ci.yml`) and npm.
+Python 3 is needed only for the study kit checks, Chrome or Chromium for browser
+tests, and Foundry only to regenerate devnet recordings or ABI vectors. No
+global npm packages are needed.
 
 ```bash
 npm ci
 npm run build          # typechecks + client + node build
-npm test               # unit/integration, offline (~10 s)
-npm run test:e2e       # browser journeys in recorded mode (uses installed Chrome;
-                       # TXSTORY_E2E_BROWSER=chromium + `npx playwright install chromium` otherwise)
+npm test               # unit/integration, offline
+npm run test:e2e       # browser journeys: the server in recorded mode, and the static site
+                       # (uses installed Chrome; TXSTORY_E2E_BROWSER=chromium + `npx playwright install chromium` otherwise)
 npm run dev            # API :8787 + Vite :5173
+npm run build:site     # static site in dist/site; `npm run site:preview` serves it on :4173
 ```
 
 Nothing in the test suite needs the network or credentials. CI
@@ -26,6 +29,27 @@ Nothing in the test suite needs the network or credentials. CI
 - the secret scan;
 - a container build;
 - the study-kit checks.
+
+## Running part of the suite
+
+```bash
+npx vitest run tests/unit/reconstruct.test.ts     # one file
+npx vitest run -t "Seaport"                        # tests whose name matches
+npx playwright test --project static-site          # one browser project (server or static-site)
+npx playwright test -g "open a recording"          # browser tests whose name matches
+```
+
+## Test data: where it comes from and how to regenerate it
+
+| Data | Source | Regenerate |
+|---|---|---|
+| `fixtures/synthetic/` | Case definitions in `tests/synthetic/cases.ts` | `npm run fixtures:synthetic` (output is byte-identical when nothing changed; commit both files) |
+| `fixtures/devnet/` | Transactions executed on a local anvil node; expected values read from the node into `expected.json` | `examples/devnet/README.md` (needs Foundry) |
+| `tests/vectors/abi-cast.json` | Foundry's `cast` encoder | `node scripts/gen-abi-vectors.mjs > tests/vectors/abi-cast.json` (needs Foundry) |
+
+Do not commit recordings of third-party provider responses
+(DATA_PROVENANCE.md). Recordings you make with `txstory record` are for local
+debugging.
 
 ## Good first contributions
 
@@ -53,11 +77,21 @@ Nothing in the test suite needs the network or credentials. CI
   for amounts.
 - **Provenance.** Every new fact or interpretation carries its provenance and
   evidence ids.
-- **Formats are versioned.** If you change the shape of the story, a recording or
-  the evidence bundle:
-  - bump its version;
-  - document it in [docs/formats.md](docs/formats.md);
-  - keep older recordings replayable.
+- **Compatibility.** These are public contracts:
+  - the story JSON (`schemaVersion`), recordings (`schema`) and the evidence
+    bundle (`formatVersion`);
+  - the HTTP API (`src/server/openapi.ts`, checked by
+    `tests/unit/api-contract.test.ts`);
+  - CLI flags, `--json` output and exit codes;
+  - the library entry point `src/engine/index.ts`.
+
+  Adding an optional field is compatible. Removing or renaming a field,
+  changing its type or meaning, or changing an exit code is not: bump the
+  version, document it in [docs/formats.md](docs/formats.md) (or the API/CLI
+  docs), and add a CHANGELOG entry. Older recordings must keep replaying: the
+  shipped recordings are rebuilt in tests, and a change that alters their
+  output digests must explain why in the CHANGELOG. During 0.x the library
+  surface may change between minor versions, with a CHANGELOG entry.
 - **Security.** Do not:
   - execute or fetch anything based on transaction data or ABIs;
   - log or print unredacted provider URLs;

@@ -58,3 +58,10 @@ export async function fetchExamples(signal?: AbortSignal): Promise<Example[]> {
   const { body } = await getJson('/api/examples', signal);
   return (body.examples as Example[]) ?? [];
 }
+
+/** Examples shipped with the static site (written by scripts/build-site.ts). */
+export async function fetchShippedExamples(signal?: AbortSignal): Promise<Example[]> {
+  const { status, body } = await getJson('/recordings/index.json', signal);
+  if (status !== 200 || !Array.isArray(body.examples)) throw new ApiError('bad-response', 'The example list could not be read.');
+  return body.examples as Example[];
+}
