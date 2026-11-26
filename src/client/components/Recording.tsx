@@ -110,11 +110,25 @@ export function ShippedExamplePage({ chain, hash, focus }: { chain: string; hash
   );
 }
 
-function ReconstructedStory({ value, sourceLabel, recordingHref, focus = null, onReset }: { value: Reconstruction; sourceLabel: string; recordingHref: string | null; focus?: string | null; onReset?: () => void }) {
+function ReconstructedStory({ value: initial, sourceLabel, recordingHref, focus = null, onReset }: { value: Reconstruction; sourceLabel: string; recordingHref: string | null; focus?: string | null; onReset?: () => void }) {
   const headingRef = useRef<HTMLHeadingElement>(null);
-  useEffect(() => { headingRef.current?.focus(); }, [value]);
+  const [value, setValue] = useState(initial);
+  const [abiState, setAbiState] = useState<{ busy: boolean; error: string | null }>({ busy: false, error: null });
+  useEffect(() => { setValue(initial); }, [initial]);
+  useEffect(() => { headingRef.current?.focus(); }, [initial]);
+  /** Rebuild the same recording text, with these ABI files (none = as recorded). */
+  const rebuild = async (files: File[]) => {
+    setAbiState({ busy: true, error: null });
+    try {
+      const m = await loadReplay();
+      setValue(await m.reconstructText(value.text, files));
+      setAbiState({ busy: false, error: null });
+    } catch (e) {
+      setAbiState({ busy: false, error: errorText(e) });
+    }
+  };
   const { report, result } = value;
-  const panel = <ReconstructionPanel report={report} sourceLabel={sourceLabel} onReset={onReset} />;
+  const panel = <ReconstructionPanel report={report} sourceLabel={sourceLabel} onReset={onReset} abi={{ ...abiState, onFiles: (f) => { void rebuild(f); } }} />;
   if (result.kind !== 'ok') {
     return (
       <div className="page">
@@ -133,7 +147,9 @@ const VERDICT: Record<ReconstructionReport['verdict'], { tone: 'ok' | 'warn' | '
   'no-story': { tone: 'warn', label: 'No story produced' },
 };
 
-export function ReconstructionPanel({ report, sourceLabel, onReset }: { report: ReconstructionReport; sourceLabel: string; onReset?: (() => void) | undefined }) {
+interface AbiControl { busy: boolean; error: string | null; onFiles: (files: File[]) => void }
+
+export function ReconstructionPanel({ report, sourceLabel, onReset, abi }: { report: ReconstructionReport; sourceLabel: string; onReset?: (() => void) | undefined; abi?: AbiControl }) {
   const r = report.recording;
   const v = VERDICT[report.verdict];
   const yesNo = (b: boolean | null) => (b === null ? 'not stored' : b ? 'same' : 'different');
@@ -167,6 +183,17 @@ export function ReconstructionPanel({ report, sourceLabel, onReset }: { report: 
         </details>
       )}
       {report.notes.length > 1 && <ul className="small notes">{report.notes.slice(1).map((n) => <li key={n}>{n}</li>)}</ul>}
+      {abi && (
+        <div className="abi-row" data-testid="abi-control">
+          {report.userAbis.length > 0
+            ? <p className="small">Decoded with your ABIs (not part of the recording): {report.userAbis.map((a) => `${a.label} (${a.entries} entries)`).join(', ')}. <button type="button" className="btn-ghost btn-xs" onClick={() => abi.onFiles([])} disabled={abi.busy}>Rebuild without them</button></p>
+            : <p className="small muted">Unknown selectors or errors? Supply the contract ABI to decode them. The file is read in this page, like the recording.</p>}
+          <label htmlFor="abi-files" className="btn-ghost btn-xs">Decode with ABI files…</label>
+          <input id="abi-files" className="sr-only" type="file" multiple accept=".json,application/json" disabled={abi.busy} onChange={(e) => { const files = [...(e.target.files ?? [])]; e.target.value = ''; if (files.length) abi.onFiles(files); }} />
+          {abi.busy && <span role="status" className="small"> Rebuilding…</span>}
+          {abi.error && <p role="alert" className="banner banner-bad small" data-testid="abi-error">{abi.error}</p>}
+        </div>
+      )}
       {onReset && <button type="button" className="btn-ghost btn-xs" onClick={onReset}>Open another file</button>}
     </section>
   );

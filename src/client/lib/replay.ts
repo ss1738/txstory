@@ -10,19 +10,25 @@ import { MAX_RECORDING_BYTES, parseRecording } from '../../engine/recording.js';
 import { reconstruct, type ReconstructionReport } from '../../engine/reconstruct.js';
 import { engineConfigFromValues } from '../../engine/defaults.js';
 import type { StoryResult } from '../../engine/analyze.js';
+import { AbiLibrary } from '../../core/abi.js';
 
-export interface Reconstruction { report: ReconstructionReport; result: StoryResult }
+/** The recording text is kept so the same file can be rebuilt again with ABIs. */
+export interface Reconstruction { report: ReconstructionReport; result: StoryResult; text: string }
+
+/** Same limit as the CLI's --abi. */
+export const MAX_ABI_BYTES = 4 * 1024 * 1024;
 
 export class RecordingInputError extends Error {}
 
 export { MAX_RECORDING_BYTES };
 
 /** Parse, validate and rebuild. Throws RecordingInputError with a readable reason for bad input. */
-export async function reconstructText(text: string): Promise<Reconstruction> {
+export async function reconstructText(text: string, abiFiles: readonly File[] = []): Promise<Reconstruction> {
   let rec;
   try { rec = parseRecording(text); } catch (e) { throw new RecordingInputError(e instanceof Error ? e.message : 'invalid recording'); }
+  const userAbi = abiFiles.length ? await readAbis(abiFiles) : undefined;
   try {
-    return await reconstruct(rec, engineConfigFromValues({}));
+    return { ...(await reconstruct(rec, engineConfigFromValues({}), userAbi ? { userAbi } : {})), text };
   } catch (e) {
     throw new RecordingInputError(`the recording could not be rebuilt: ${e instanceof Error ? e.message : 'unknown error'}`);
   }
@@ -43,6 +49,19 @@ export async function reconstructShipped(path: string, signal?: AbortSignal): Pr
   if (res.status === 404 || (res.ok && !isJson)) throw new RecordingInputError('this example recording is not on this site');
   if (!res.ok) throw new RecordingInputError(`the example could not be loaded (HTTP ${res.status})`);
   return reconstructText(await res.text());
+}
+
+/** ABI files (JSON ABI or a list of signatures), parsed as data. Provenance "user", labelled by file name. */
+async function readAbis(files: readonly File[]) {
+  const library = new AbiLibrary();
+  const labels: Array<{ label: string; entries: number }> = [];
+  for (const f of files) {
+    if (f.size > MAX_ABI_BYTES) throw new RecordingInputError(`${f.name}: ABI files are limited to ${formatBytes(MAX_ABI_BYTES)}`);
+    let json: unknown;
+    try { json = JSON.parse(await f.text()); } catch { throw new RecordingInputError(`${f.name}: not valid JSON (expected a JSON ABI or a list of signatures)`); }
+    try { labels.push({ label: f.name, entries: library.addJson(json, 'user', f.name) }); } catch (e) { throw new RecordingInputError(`${f.name}: ${e instanceof Error ? e.message : 'invalid ABI'}`); }
+  }
+  return { library, labels };
 }
 
 export function formatBytes(n: number): string {

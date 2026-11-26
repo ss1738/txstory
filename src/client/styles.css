@@ -248,6 +248,9 @@ a.btn-primary, label.btn-primary { color: var(--accent-ink); }
 .reconstruction .panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .recon-kv > div { display: contents; }
 .reconstruction .notes { color: var(--ink-2); padding-left: 1.2rem; }
+.abi-row { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 6px; }
+.abi-row:has(input:focus-visible) label { outline: 3px solid var(--accent); outline-offset: 2px; }
+label.btn-ghost { display: inline-flex; align-items: center; cursor: pointer; }
 
 /* Get started */
 .toc ol { columns: 2; padding-left: 1.2rem; }

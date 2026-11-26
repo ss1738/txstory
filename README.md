@@ -124,6 +124,10 @@ and reports:
 - field-level differences when the recording embeds its original story
   (`record --embed-story`).
 
+"Decode with ABI files" rebuilds the same recording with contract ABIs you
+supply, like `txstory replay tx.json --abi MyContract.json`. The report then says
+the output changed because of those ABIs, not because the evidence did.
+
 The file is not uploaded. What rebuilding does **not** do: it does not
 re-execute EVM code, and it does not verify chain history. The recorded
 responses are trusted as captured. Details: [docs/formats.md](docs/formats.md).

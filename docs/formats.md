@@ -95,6 +95,7 @@ a report. `txstory replay --json` includes it as `report`, and the browser's
 |---|---|
 | `recording` | What the file holds: schema, network, hash, origin, description, `recordedAt`, recorder, engine version and story schema at recording time, exchange counts by kind, providers, recorded stage and result kind, whether it embeds the story |
 | `engine` | The engine version and story schema that rebuilt it |
+| `userAbis` | ABIs supplied for this rebuild (`--abi`, or "Decode with ABI files" in the browser), with entry counts. They are not part of the recording, so they can change the output digest while the evidence stays the same; the notes say so. |
 | `verdict` | `reproduced` (both digests equal), `differs` (at least one differs), `no-digest` (nothing stored to compare with), `no-story` (the responses do not produce a story, for example a pending transaction) |
 | `check` | `sameEvidence`, `sameOutput`, the recorded and rebuilt output digests |
 | `missing` | Requests the analysis made that the recording cannot answer |

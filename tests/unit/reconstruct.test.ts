@@ -97,6 +97,21 @@ describe('reconstruction report', () => {
     expect(report.notes.join(' ')).toMatch(/had no recorded answer/);
   });
 
+  it('attributes a different output to user-supplied ABIs, not to an edited recording', async () => {
+    const { AbiLibrary } = await import('../../src/core/abi.js');
+    const library = new AbiLibrary();
+    const entries = library.addJson(JSON.parse(readFileSync('fixtures/devnet/Demo.abi.json', 'utf8')), 'user', 'Demo.abi.json');
+    const rec = load('fixtures/devnet/anvil-0x27dbc58bd2861be2ea7264fd2d03aa97510ebc7ff3e00ab59a0bb114cbbe4aab.json');
+    const { report, result } = await reconstruct(rec, config, { userAbi: { library, labels: [{ label: 'Demo.abi.json', entries }] } });
+    expect(report.userAbis).toEqual([{ label: 'Demo.abi.json', entries }]);
+    expect(report.check.sameEvidence).toBe(true);
+    expect(report.check.sameOutput).toBe(false);
+    expect(report.notes.join(' ')).toMatch(/decodes with ABIs you supplied \(Demo\.abi\.json\)/);
+    expect(report.notes.join(' ')).not.toMatch(/edited recording/);
+    if (result.kind !== 'ok') throw new Error('expected a story');
+    expect(result.story.revert?.summary).toBe('InsufficientBalance(available="1000000000000000000", required="5")');
+  });
+
   it('says when there is no stored digest to compare with', async () => {
     const rec = load(SWAP);
     delete rec.output;

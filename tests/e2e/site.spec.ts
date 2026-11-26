@@ -191,3 +191,30 @@ test.describe('static site accessibility', () => {
     }
   });
 });
+
+test.describe('decode with your ABI (static site)', () => {
+  const CUSTOM_ERROR = '0x27dbc58bd2861be2ea7264fd2d03aa97510ebc7ff3e00ab59a0bb114cbbe4aab';
+  test('an ABI file decodes a custom error that the recording alone cannot, and the report says why the output changed', async ({ page, baseURL }) => {
+    await page.goto(`/example/anvil/${CUSTOM_ERROR}`);
+    const panel = page.getByTestId('reconstruction');
+    await expect(panel).toContainText('Reproduced');
+    await expect(page.locator('.interps')).toContainText('unknown error selector 0xcf479181');
+    const requests = watchRequests(page);
+    await page.setInputFiles('#abi-files', asFile('Demo.abi.json', readFileSync('fixtures/devnet/Demo.abi.json', 'utf8')));
+    await expect(page.getByTestId('abi-control')).toContainText('Decoded with your ABIs (not part of the recording): Demo.abi.json');
+    await expect(page.locator('.interps')).toContainText('InsufficientBalance(available="1000000000000000000", required="5")');
+    await expect(panel).toContainText('decodes with ABIs you supplied (Demo.abi.json)');
+    expect(requests.filter((r) => new URL(r.url()).origin !== new URL(baseURL!).origin || r.method() !== 'GET')).toEqual([]);
+    await page.getByRole('button', { name: 'Rebuild without them' }).click();
+    await expect(panel).toContainText('Reproduced');
+    await expect(page.locator('.interps')).toContainText('unknown error selector 0xcf479181');
+  });
+
+  test('an invalid ABI file is reported and the story stays as it was', async ({ page }) => {
+    await page.goto(`/example/anvil/${CUSTOM_ERROR}`);
+    await expect(page.getByTestId('reconstruction')).toContainText('Reproduced');
+    await page.setInputFiles('#abi-files', asFile('bad.json', '{"not": "an abi"}'));
+    await expect(page.getByTestId('abi-error')).toContainText('bad.json');
+    await expect(page.getByTestId('reconstruction')).toContainText('Reproduced');
+  });
+});

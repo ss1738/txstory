@@ -48,6 +48,8 @@ export interface ReconstructionReport {
   };
   /** The engine that ran this reconstruction. */
   engine: { version: string; storySchema: number };
+  /** ABIs supplied for this reconstruction (not part of the recording), with their entry counts. */
+  userAbis: Array<{ label: string; entries: number }>;
   result: { kind: StoryResult['kind']; message: string | null };
   check: ReplayCheck;
   verdict: ReconstructionVerdict;
@@ -100,6 +102,7 @@ export async function reconstruct(rec: Recording, base: EngineConfig, opts: Omit
       explorerApiKeyUsed: rec.config?.explorerApiKeyUsed ?? false,
     },
     engine: { version: ENGINE_VERSION, storySchema: STORY_SCHEMA_VERSION },
+    userAbis: opts.userAbi?.labels.map((l) => ({ ...l })) ?? [],
     result: { kind: result.kind, message: result.kind === 'ok' ? null : result.message },
     check,
     verdict,
@@ -129,7 +132,9 @@ function explain(r: ReconstructionReport): string[] {
       if (r.check.sameEvidence === false) {
         notes.push('The provider evidence differs from what was recorded. The analysis now reads a different set of responses: either the recording was edited, or this engine requests different data than the one that made it.');
       }
-      if (r.check.sameOutput === false) {
+      if (r.check.sameOutput === false && r.userAbis.length > 0 && r.check.sameEvidence !== false) {
+        notes.push(`The output differs because this rebuild decodes with ABIs you supplied (${r.userAbis.map((a) => a.label).join(', ')}), which the original analysis did not have. The recorded evidence is the same; decodings and the interpretations built on them can change.`);
+      } else if (r.check.sameOutput === false) {
         notes.push(versionChanged
           ? `The output differs. The recording was made by TxStory ${r.recording.engineVersion} and rebuilt with ${r.engine.version}, so a change in analysis code is the first thing to check.`
           : 'The output differs although the engine version is the same. That points to an edited recording or a non-deterministic step in the analysis; please report it with the recording attached if it is shareable.');

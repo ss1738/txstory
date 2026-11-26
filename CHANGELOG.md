@@ -24,6 +24,12 @@ developer site, and a contributor path that is tested.
   installation and usage commands, limitations, and project links. No server
   and no provider credentials. A Content-Security-Policy limits the page to its
   own origin. Not deployed by this project.
+- **Decode with ABI files** on a rebuilt recording in the browser, the
+  equivalent of `txstory replay --abi`. The report records the ABIs
+  (`userAbis`) and explains that they, not the evidence, changed the output.
+  Case: the devnet `customError` recording shows `unknown error selector
+  0xcf479181` until `fixtures/devnet/Demo.abi.json` is supplied, then
+  `InsufficientBalance(available="1000000000000000000", required="5")`.
 - **Get started page** whose commands are checked by a unit test that runs the
   offline ones.
 - **Decoder example** `examples/decoder/split.ts`, tested against values read
