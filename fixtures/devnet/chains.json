@@ -1,0 +1,15 @@
+{
+ "chains": [
+  {
+   "key": "anvil",
+   "chainId": 31337,
+   "name": "Anvil devnet",
+   "nativeSymbol": "ETH",
+   "feeModel": "ethereum-l1",
+   "rpc": [
+    "http://127.0.0.1:18545"
+   ],
+   "explorerApi": null
+  }
+ ]
+}

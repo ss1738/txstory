@@ -1,0 +1,21 @@
+# Allowlist: the build context contains ONLY what the Dockerfile copies.
+# Everything else (study results and session sheets, tests, scripts, .env files,
+# local credentials, git history, legacy prototype, build output) stays out.
+*
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.server.json
+!vite.config.ts
+!src/
+!fixtures/synthetic/
+!fixtures/devnet/
+!THIRD_PARTY_NOTICES.md
+!LICENSE
+!NOTICE
+
+# Never, even inside allowed directories.
+**/.env
+**/.env.*
+**/*.log
+**/.DS_Store

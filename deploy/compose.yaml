@@ -1,0 +1,63 @@
+# TxStory private pilot: app + Cloudflare Tunnel connector on one small Linux VM.
+# Access control is Cloudflare Access in front of the tunnel hostname. The app
+# publishes NO ports, so it is reachable only through the tunnel (no bypass via
+# the VM's public IP). See ../DEPLOYMENT.md. Nothing here has been deployed.
+#
+#   TXSTORY_IMAGE=txstory:<git-sha> CLOUDFLARED_IMAGE=cloudflare/cloudflared:<pinned-version> \
+#     docker compose -f deploy/compose.yaml up -d
+name: txstory-pilot
+
+services:
+  app:
+    image: ${TXSTORY_IMAGE:?set TXSTORY_IMAGE to an image tag built from a known commit}
+    restart: unless-stopped
+    env_file:
+      - path: ./pilot.env            # optional operator settings and provider secrets (chmod 600)
+        required: false
+    environment:
+      TXSTORY_MODE: live
+      TXSTORY_HOST: 0.0.0.0
+      # Only the tunnel connector may supply X-Forwarded-For (its fixed address below).
+      TXSTORY_TRUST_PROXY: 172.30.53.2
+      TXSTORY_SHUTDOWN_GRACE_MS: "8000"
+    networks:
+      pilot:
+        ipv4_address: 172.30.53.3
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 256
+    stop_grace_period: 15s           # > TXSTORY_SHUTDOWN_GRACE_MS, so drains finish before SIGKILL
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+  cloudflared:
+    image: ${CLOUDFLARED_IMAGE:?pin a specific cloudflare/cloudflared version tag}
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run"]
+    env_file:
+      - path: ./cloudflared.env      # TUNNEL_TOKEN=... (chmod 600; never committed)
+        required: true
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      pilot:
+        ipv4_address: 172.30.53.2
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+networks:
+  pilot:
+    ipam:
+      config:
+        - subnet: 172.30.53.0/29

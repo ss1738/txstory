@@ -1,0 +1,18 @@
+# Dependency updates arrive as pull requests and go through CI like any change.
+# Policy (CONTRIBUTING.md): only adopt releases at least two weeks old; review
+# changelogs for packages that are distributed (react, react-dom, @noble/hashes).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    groups:
+      dev-tooling:
+        dependency-type: development
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
+  - package-ecosystem: docker
+    directory: /
+    schedule: { interval: monthly }

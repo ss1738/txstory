@@ -1,0 +1,80 @@
+# Changelog
+
+Version numbers follow semantic versioning in spirit. During 0.x, any minor
+version may change the library surface. Serialized formats are versioned
+independently (see docs/formats.md).
+
+## 0.3.0: unreleased (prepared 2026-11-26)
+
+Developer release: one engine behind a browser UI, CLI, HTTP API and library.
+Licensed under the Apache License, Version 2.0 (Copyright 2026 Satyawan Singh).
+
+**Added**
+
+- **CLI `txstory`:** `explain`, `record`, `replay`, `compare`, `decode`,
+  `selector` and `networks`. JSON on stdout, stable exit codes, redacted URLs.
+- **Call traces** (`debug_traceTransaction` with the callTracer):
+  - the call tree, with failure propagation;
+  - native value inside execution from the trace, with rolled-back transfers
+    excluded;
+  - comparison with explorer internal transactions;
+  - endpoints that do not offer traces are skipped and recorded.
+- **ABI decoding** of calldata, logs, trace frames and revert data:
+  - `Error(string)`, `Panic(uint256)` and custom errors;
+  - strict and bounded;
+  - ambiguity reported;
+  - provenance labels: built-in, user and signature.
+- **Decoder modules** as the extension point: ERC-20/721/1155, WETH,
+  Uniswap-style pools, and Seaport with evidence-validated interpretations.
+- **Recordings** (`txstory-fixture-v3`): the actual provider responses, the
+  endpoints and options, and output and evidence digests. Offline replay never
+  uses the network.
+- **`compareStories` / `txstory compare`,** which explain differences.
+- **Custom networks** from chain files, or embedded in recordings. Includes a
+  local anvil devnet scenario with expected values from the node.
+- **HTTP:** `/api/recording/...` (replayable recordings) and `/api/openapi.json`
+  (the contract). Documentation examples are executed in tests.
+- **Browser:** a Call trace tab, and ABI decodings in the Call data and Logs
+  tabs. Custom networks are supported.
+- **Synthetic recordings** (`fixtures/synthetic`, 15 cases) generated from
+  `tests/synthetic/cases.ts`. Recordings carry an `origin` (`captured`,
+  `local-devnet`, `synthetic`). Synthetic replays are labelled `synthetic` in
+  sources, stories, the API, the CLI and the browser.
+- **Opt-in captured suite** (`npm run test:captured`) for recordings of real
+  provider responses kept outside the repository.
+- **Startup warnings** for unreadable fixture directories and invalid
+  recordings, instead of silently missing examples.
+- **Open-source release preparation:** README, docs/, CONTRIBUTING, SECURITY,
+  data provenance, third-party notices, CI, and issue and PR templates.
+
+**Changed**
+
+- **Story schema 3:** `network`, `trace`, `revert`, `abiDecoding`,
+  `completeness.trace`, and the `protocol` interpretation kind.
+- **Code layout:**
+  - acquisition moved to `src/engine`;
+  - the Node build outputs to `dist/node`;
+  - the engine config never reads the environment implicitly.
+- **Deterministic source ordering,** so the same evidence gives the same output.
+- **Examples come from `fixtures/synthetic` and `fixtures/devnet`** (21
+  recordings). Set `TXSTORY_FIXTURES_DIR` to add your own.
+- **`study/verify_answer_key.py`** takes the captured recordings as explicit
+  arguments (`--captured`, `--evidence`), and has a `--check` mode.
+
+**Removed**
+
+- `legacy/`: the original Python prototype, superseded. It is still in Git
+  history.
+- **Captured provider responses** (the former `fixtures/recorded`,
+  `study/evidence`, `fixtures/legacy`) were moved out of the repository tree,
+  because their redistribution terms are unresolved (DATA_PROVENANCE.md). They
+  remain in earlier commits; see RELEASE.md.
+- `scripts/record-fixture.ts` and `npm run record-fixture`. Use
+  `txstory record <network> <hash> -o FILE`.
+
+## 0.2.0: 2026-11-26 (not published)
+
+Story model with provenance, ledger, cross-check, React UI, HTTP API, recorded
+fixtures, the usability study kit, and private-pilot preparation (proxy-aware
+limits, admission control, container). See VERIFICATION.md for the verification
+record of these rounds.

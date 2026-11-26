@@ -1,0 +1,205 @@
+{
+ "schema": "txstory-fixture-v3",
+ "chain": "ethereum",
+ "hash": "0xe558259f8db603a729cb2a6ff7c250c08b20c16faa7b110d9f85d85f59cb2f94",
+ "description": "Synthetic: WETH wrap that the explorer has not indexed (HTTP 404)",
+ "recordedAt": "2026-11-26T00:00:00.000Z",
+ "recorder": "scripts/synthetic-fixtures.ts (synthetic data, not captured from any provider)",
+ "origin": "synthetic",
+ "engine": {
+  "name": "txstory",
+  "version": "0.3.0",
+  "storySchema": 3
+ },
+ "endpoints": {
+  "rpcs": [
+   {
+    "url": "https://rpc.synthetic.invalid/ethereum",
+    "provider": "Synthetic RPC (not a real provider)"
+   }
+  ],
+  "explorerApi": "https://explorer.synthetic.invalid/ethereum"
+ },
+ "options": {
+  "trace": "auto"
+ },
+ "config": {
+  "maxExplorerPages": 6,
+  "maxTokenMetadataCalls": 30,
+  "explorerApiKeyUsed": false
+ },
+ "output": {
+  "stage": "full",
+  "kind": "ok",
+  "storySha256": "f70e8abdfad80e10c3bccddc88e050f3f9192926f7535ff150ce66ae469f1d86",
+  "evidenceSha256": "66029c2946113411ec9e89a71b035114d5f8a80ed56860699d259407cbb6286c"
+ },
+ "exchanges": {
+  "dfb5300f0554d07909de9202420cef9a": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getTransactionByHash",
+   "url": "https://rpc.synthetic.invalid/ethereum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "eth_getTransactionByHash",
+    "params": [
+     "0xe558259f8db603a729cb2a6ff7c250c08b20c16faa7b110d9f85d85f59cb2f94"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"hash\":\"0xe558259f8db603a729cb2a6ff7c250c08b20c16faa7b110d9f85d85f59cb2f94\",\"from\":\"0xf2cee67145548ba5676483a62dffde38e857e410\",\"to\":\"0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2\",\"value\":\"0x2c68af0bb140000\",\"input\":\"0xd0e30db0\",\"nonce\":\"0x5\",\"type\":\"0x2\",\"gas\":\"0x6d60\",\"blockNumber\":\"0x1312d05\",\"blockHash\":\"0x0f45e8e05de6c81b31206012b66caeecc63a4a481fa36bcc4e50511fc51c4abd\",\"transactionIndex\":\"0x0\"}}"
+  },
+  "72cf0cb4d43693820738851fbae04c74": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getTransactionReceipt",
+   "url": "https://rpc.synthetic.invalid/ethereum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "eth_getTransactionReceipt",
+    "params": [
+     "0xe558259f8db603a729cb2a6ff7c250c08b20c16faa7b110d9f85d85f59cb2f94"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"transactionHash\":\"0xe558259f8db603a729cb2a6ff7c250c08b20c16faa7b110d9f85d85f59cb2f94\",\"blockNumber\":\"0x1312d05\",\"blockHash\":\"0x0f45e8e05de6c81b31206012b66caeecc63a4a481fa36bcc4e50511fc51c4abd\",\"from\":\"0xf2cee67145548ba5676483a62dffde38e857e410\",\"to\":\"0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2\",\"status\":\"0x1\",\"gasUsed\":\"0x6d60\",\"effectiveGasPrice\":\"0x59682f00\",\"contractAddress\":null,\"logs\":[{\"address\":\"0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2\",\"topics\":[\"0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c\",\"0x000000000000000000000000f2cee67145548ba5676483a62dffde38e857e410\"],\"data\":\"0x00000000000000000000000000000000000000000000000002c68af0bb140000\",\"logIndex\":\"0x0\",\"transactionHash\":\"0xe558259f8db603a729cb2a6ff7c250c08b20c16faa7b110d9f85d85f59cb2f94\",\"blockNumber\":\"0x1312d05\",\"removed\":false}]}}"
+  },
+  "4635b7d74ab8bab3027d84c126e78178": {
+   "kind": "explorer",
+   "provider": "Blockscout",
+   "method": "GET /api/v2/transactions/0xe558259f8db603a729cb2a6ff7c250c08b20c16faa7b110d9f85d85f59cb2f94",
+   "url": "https://explorer.synthetic.invalid/ethereum/api/v2/transactions/0xe558259f8db603a729cb2a6ff7c250c08b20c16faa7b110d9f85d85f59cb2f94",
+   "httpStatus": 404,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"message\":\"Not found\"}"
+  },
+  "224d872d8f5a2c11e024c23fe2619de6": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "debug_traceTransaction",
+   "url": "https://rpc.synthetic.invalid/ethereum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "debug_traceTransaction",
+    "params": [
+     "0xe558259f8db603a729cb2a6ff7c250c08b20c16faa7b110d9f85d85f59cb2f94",
+     {
+      "tracer": "callTracer",
+      "tracerConfig": {
+       "onlyTopCall": false
+      },
+      "timeout": "45s"
+     }
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32601,\"message\":\"the method debug_traceTransaction does not exist/is not available\"}}"
+  },
+  "97585236d71177adae9b87296877d976": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getBlockByNumber",
+   "url": "https://rpc.synthetic.invalid/ethereum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "eth_getBlockByNumber",
+    "params": [
+     "0x1312d05",
+     false
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{\"number\":\"0x1312d05\",\"hash\":\"0x0f45e8e05de6c81b31206012b66caeecc63a4a481fa36bcc4e50511fc51c4abd\",\"timestamp\":\"0x6a86e605\",\"miner\":\"0x69d674ac392fffc17357c262f7a013d1fb30d081\",\"baseFeePerGas\":\"0x3b9aca00\"}}"
+  },
+  "040cbdd24d938019c9a2a5ba98e79660": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_call",
+   "url": "https://rpc.synthetic.invalid/ethereum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 4,
+    "method": "eth_call",
+    "params": [
+     {
+      "to": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "data": "0x95d89b41"
+     },
+     "0x1312d05"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":4,\"result\":\"0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000045745544800000000000000000000000000000000000000000000000000000000\"}"
+  },
+  "d47f138f7bad2a62ca7be2fe949c8a8b": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_call",
+   "url": "https://rpc.synthetic.invalid/ethereum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 5,
+    "method": "eth_call",
+    "params": [
+     {
+      "to": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "data": "0x06fdde03"
+     },
+     "0x1312d05"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":5,\"result\":\"0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000d5772617070656420457468657200000000000000000000000000000000000000\"}"
+  },
+  "fa190bc6f29a119893c83e06ae2f2362": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_call",
+   "url": "https://rpc.synthetic.invalid/ethereum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 6,
+    "method": "eth_call",
+    "params": [
+     {
+      "to": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "data": "0x313ce567"
+     },
+     "0x1312d05"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":6,\"result\":\"0x0000000000000000000000000000000000000000000000000000000000000012\"}"
+  },
+  "10d15bd3330120df8747b16195d69350": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getCode",
+   "url": "https://rpc.synthetic.invalid/ethereum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 7,
+    "method": "eth_getCode",
+    "params": [
+     "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+     "0x1312d05"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":7,\"result\":\"0x6080604052\"}"
+  }
+ }
+}

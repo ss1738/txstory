@@ -1,0 +1,142 @@
+{
+ "schema": "txstory-fixture-v3",
+ "chain": "base",
+ "hash": "0xce4d4c3bded0220d6e5d7a6f1589edf8bbf4281a3e434579b19dd55e97ac4712",
+ "description": "Synthetic: Base transfer while the explorer refuses requests (HTTP 403)",
+ "recordedAt": "2026-11-26T00:00:00.000Z",
+ "recorder": "scripts/synthetic-fixtures.ts (synthetic data, not captured from any provider)",
+ "origin": "synthetic",
+ "engine": {
+  "name": "txstory",
+  "version": "0.3.0",
+  "storySchema": 3
+ },
+ "endpoints": {
+  "rpcs": [
+   {
+    "url": "https://rpc.synthetic.invalid/base",
+    "provider": "Synthetic RPC (not a real provider)"
+   }
+  ],
+  "explorerApi": "https://explorer.synthetic.invalid/base"
+ },
+ "options": {
+  "trace": "auto"
+ },
+ "config": {
+  "maxExplorerPages": 6,
+  "maxTokenMetadataCalls": 30,
+  "explorerApiKeyUsed": false
+ },
+ "output": {
+  "stage": "full",
+  "kind": "ok",
+  "storySha256": "b389738471036a89f04a106c708a2a9ba1158aa0dbdaf4062e62c18d88c22980",
+  "evidenceSha256": "70dcec2a9419fe2899afd0688506a62d8a5766dad99f984d137156bed653d19d"
+ },
+ "exchanges": {
+  "062e4bfa9b298629faf48215f8c287e6": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getTransactionByHash",
+   "url": "https://rpc.synthetic.invalid/base",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "eth_getTransactionByHash",
+    "params": [
+     "0xce4d4c3bded0220d6e5d7a6f1589edf8bbf4281a3e434579b19dd55e97ac4712"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"hash\":\"0xce4d4c3bded0220d6e5d7a6f1589edf8bbf4281a3e434579b19dd55e97ac4712\",\"from\":\"0xf2cee67145548ba5676483a62dffde38e857e410\",\"to\":\"0xbd047c533778ba615e3ff1e868f5abe9ec659286\",\"value\":\"0xb1a2bc2ec50000\",\"input\":\"0x\",\"nonce\":\"0xa\",\"type\":\"0x2\",\"gas\":\"0x5208\",\"blockNumber\":\"0x17d7841\",\"blockHash\":\"0x204ccab6ab091e49c5fc2bdee1be78ad52073b4909f1e73d9ef6898f8d8705e4\",\"transactionIndex\":\"0x0\"}}"
+  },
+  "7123428707f0cfa93d4368e1690c00bb": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getTransactionReceipt",
+   "url": "https://rpc.synthetic.invalid/base",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "eth_getTransactionReceipt",
+    "params": [
+     "0xce4d4c3bded0220d6e5d7a6f1589edf8bbf4281a3e434579b19dd55e97ac4712"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"transactionHash\":\"0xce4d4c3bded0220d6e5d7a6f1589edf8bbf4281a3e434579b19dd55e97ac4712\",\"blockNumber\":\"0x17d7841\",\"blockHash\":\"0x204ccab6ab091e49c5fc2bdee1be78ad52073b4909f1e73d9ef6898f8d8705e4\",\"from\":\"0xf2cee67145548ba5676483a62dffde38e857e410\",\"to\":\"0xbd047c533778ba615e3ff1e868f5abe9ec659286\",\"status\":\"0x1\",\"gasUsed\":\"0x5208\",\"effectiveGasPrice\":\"0x2dc6c0\",\"contractAddress\":null,\"logs\":[],\"l1Fee\":\"0x3b9aca00\"}}"
+  },
+  "578c37a7d56d0012d5a217e7c6dbcf92": {
+   "kind": "explorer",
+   "provider": "Blockscout",
+   "method": "GET /api/v2/transactions/0xce4d4c3bded0220d6e5d7a6f1589edf8bbf4281a3e434579b19dd55e97ac4712",
+   "url": "https://explorer.synthetic.invalid/base/api/v2/transactions/0xce4d4c3bded0220d6e5d7a6f1589edf8bbf4281a3e434579b19dd55e97ac4712",
+   "httpStatus": 403,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "<html>Forbidden</html>"
+  },
+  "6ed51afb530807698830b2c1feb93bf6": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "debug_traceTransaction",
+   "url": "https://rpc.synthetic.invalid/base",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "debug_traceTransaction",
+    "params": [
+     "0xce4d4c3bded0220d6e5d7a6f1589edf8bbf4281a3e434579b19dd55e97ac4712",
+     {
+      "tracer": "callTracer",
+      "tracerConfig": {
+       "onlyTopCall": false
+      },
+      "timeout": "45s"
+     }
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32601,\"message\":\"the method debug_traceTransaction does not exist/is not available\"}}"
+  },
+  "85e25b682b5931d541571df9795c27ca": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getBlockByNumber",
+   "url": "https://rpc.synthetic.invalid/base",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "eth_getBlockByNumber",
+    "params": [
+     "0x17d7841",
+     false
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{\"number\":\"0x17d7841\",\"hash\":\"0x204ccab6ab091e49c5fc2bdee1be78ad52073b4909f1e73d9ef6898f8d8705e4\",\"timestamp\":\"0x6955ba2c\",\"miner\":\"0x4200000000000000000000000000000000000011\",\"baseFeePerGas\":\"0x1e8480\"}}"
+  },
+  "3d0ab2ed960cd1aa5b5d6c3c338383f1": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getCode",
+   "url": "https://rpc.synthetic.invalid/base",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 4,
+    "method": "eth_getCode",
+    "params": [
+     "0xbd047c533778ba615e3ff1e868f5abe9ec659286",
+     "0x17d7841"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":4,\"result\":\"0x\"}"
+  }
+ }
+}

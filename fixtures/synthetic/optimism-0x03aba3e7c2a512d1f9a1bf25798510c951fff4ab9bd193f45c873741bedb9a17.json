@@ -1,0 +1,142 @@
+{
+ "schema": "txstory-fixture-v3",
+ "chain": "optimism",
+ "hash": "0x03aba3e7c2a512d1f9a1bf25798510c951fff4ab9bd193f45c873741bedb9a17",
+ "description": "Synthetic: OP Stack deposit transaction (type 0x7e, no L2 fee)",
+ "recordedAt": "2026-11-26T00:00:00.000Z",
+ "recorder": "scripts/synthetic-fixtures.ts (synthetic data, not captured from any provider)",
+ "origin": "synthetic",
+ "engine": {
+  "name": "txstory",
+  "version": "0.3.0",
+  "storySchema": 3
+ },
+ "endpoints": {
+  "rpcs": [
+   {
+    "url": "https://rpc.synthetic.invalid/optimism",
+    "provider": "Synthetic RPC (not a real provider)"
+   }
+  ],
+  "explorerApi": "https://explorer.synthetic.invalid/optimism"
+ },
+ "options": {
+  "trace": "auto"
+ },
+ "config": {
+  "maxExplorerPages": 6,
+  "maxTokenMetadataCalls": 30,
+  "explorerApiKeyUsed": false
+ },
+ "output": {
+  "stage": "full",
+  "kind": "ok",
+  "storySha256": "b8fc8cf1da89702a46200a8bfdd19780ac43e5ebebe9512975a576c471869a08",
+  "evidenceSha256": "12d8f49cbc5d83d887466d6c71ab40a1ca2a4e7cecb97de0cd947fb6328f7be0"
+ },
+ "exchanges": {
+  "f64254e053cbaec00f19bb4c4e2d8871": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getTransactionByHash",
+   "url": "https://rpc.synthetic.invalid/optimism",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "eth_getTransactionByHash",
+    "params": [
+     "0x03aba3e7c2a512d1f9a1bf25798510c951fff4ab9bd193f45c873741bedb9a17"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"hash\":\"0x03aba3e7c2a512d1f9a1bf25798510c951fff4ab9bd193f45c873741bedb9a17\",\"from\":\"0xd32286fc7db06c113780a54a4c041f50daaf1685\",\"to\":\"0xbd047c533778ba615e3ff1e868f5abe9ec659286\",\"value\":\"0x2386f26fc10000\",\"input\":\"0x\",\"nonce\":\"0x0\",\"type\":\"0x7e\",\"gas\":\"0xc350\",\"blockNumber\":\"0x7bfa481\",\"blockHash\":\"0x851bdea0fe0dc520e00c91b663cda7cd5cccf647a03a8655de8352f0d9f24801\",\"transactionIndex\":\"0x0\"}}"
+  },
+  "86aca2a32630b93f8526e04005100e20": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getTransactionReceipt",
+   "url": "https://rpc.synthetic.invalid/optimism",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "eth_getTransactionReceipt",
+    "params": [
+     "0x03aba3e7c2a512d1f9a1bf25798510c951fff4ab9bd193f45c873741bedb9a17"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"transactionHash\":\"0x03aba3e7c2a512d1f9a1bf25798510c951fff4ab9bd193f45c873741bedb9a17\",\"blockNumber\":\"0x7bfa481\",\"blockHash\":\"0x851bdea0fe0dc520e00c91b663cda7cd5cccf647a03a8655de8352f0d9f24801\",\"from\":\"0xd32286fc7db06c113780a54a4c041f50daaf1685\",\"to\":\"0xbd047c533778ba615e3ff1e868f5abe9ec659286\",\"status\":\"0x1\",\"gasUsed\":\"0xc350\",\"effectiveGasPrice\":\"0x0\",\"contractAddress\":null,\"logs\":[]}}"
+  },
+  "9f9aeb93484e4328a56b0ef25d78aa5d": {
+   "kind": "explorer",
+   "provider": "Blockscout",
+   "method": "GET /api/v2/transactions/0x03aba3e7c2a512d1f9a1bf25798510c951fff4ab9bd193f45c873741bedb9a17",
+   "url": "https://explorer.synthetic.invalid/optimism/api/v2/transactions/0x03aba3e7c2a512d1f9a1bf25798510c951fff4ab9bd193f45c873741bedb9a17",
+   "httpStatus": 404,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"message\":\"Not found\"}"
+  },
+  "e72e33e7112e1db1227569f28f4b1185": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "debug_traceTransaction",
+   "url": "https://rpc.synthetic.invalid/optimism",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "debug_traceTransaction",
+    "params": [
+     "0x03aba3e7c2a512d1f9a1bf25798510c951fff4ab9bd193f45c873741bedb9a17",
+     {
+      "tracer": "callTracer",
+      "tracerConfig": {
+       "onlyTopCall": false
+      },
+      "timeout": "45s"
+     }
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32601,\"message\":\"the method debug_traceTransaction does not exist/is not available\"}}"
+  },
+  "dd185725c10ea126d63786855911dd40": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getBlockByNumber",
+   "url": "https://rpc.synthetic.invalid/optimism",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "eth_getBlockByNumber",
+    "params": [
+     "0x7bfa481",
+     false
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{\"number\":\"0x7bfa481\",\"hash\":\"0x851bdea0fe0dc520e00c91b663cda7cd5cccf647a03a8655de8352f0d9f24801\",\"timestamp\":\"0x6955b964\",\"miner\":\"0x4200000000000000000000000000000000000011\",\"baseFeePerGas\":\"0x3e8\"}}"
+  },
+  "e93d8bb66aac9f695a7f2c446df00d18": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getCode",
+   "url": "https://rpc.synthetic.invalid/optimism",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 4,
+    "method": "eth_getCode",
+    "params": [
+     "0xbd047c533778ba615e3ff1e868f5abe9ec659286",
+     "0x7bfa481"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":4,\"result\":\"0x\"}"
+  }
+ }
+}

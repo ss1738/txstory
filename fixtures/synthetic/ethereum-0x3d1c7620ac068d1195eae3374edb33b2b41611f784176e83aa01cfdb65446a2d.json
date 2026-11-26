@@ -1,0 +1,169 @@
+{
+ "schema": "txstory-fixture-v3",
+ "chain": "ethereum",
+ "hash": "0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d",
+ "description": "Synthetic: reverted token transfer (only the fee is paid)",
+ "recordedAt": "2026-11-26T00:00:00.000Z",
+ "recorder": "scripts/synthetic-fixtures.ts (synthetic data, not captured from any provider)",
+ "origin": "synthetic",
+ "engine": {
+  "name": "txstory",
+  "version": "0.3.0",
+  "storySchema": 3
+ },
+ "endpoints": {
+  "rpcs": [
+   {
+    "url": "https://rpc.synthetic.invalid/ethereum",
+    "provider": "Synthetic RPC (not a real provider)"
+   }
+  ],
+  "explorerApi": "https://explorer.synthetic.invalid/ethereum"
+ },
+ "options": {
+  "trace": "auto"
+ },
+ "config": {
+  "maxExplorerPages": 6,
+  "maxTokenMetadataCalls": 30,
+  "explorerApiKeyUsed": false
+ },
+ "output": {
+  "stage": "full",
+  "kind": "ok",
+  "storySha256": "259e04fea50bd6f6e669cd8475a003d5e37f5c3144f97d59cb757de40d165857",
+  "evidenceSha256": "a1e7c14d8ec10ff90f1a332d570c503732d3ac60880b73a490e6acf63c1c1d5c"
+ },
+ "exchanges": {
+  "4849f47f7f92d1d8dade02bb4a35b65f": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getTransactionByHash",
+   "url": "https://rpc.synthetic.invalid/ethereum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "eth_getTransactionByHash",
+    "params": [
+     "0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"hash\":\"0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d\",\"from\":\"0xf2cee67145548ba5676483a62dffde38e857e410\",\"to\":\"0x589b5c33f36dea4068242c6a2e89da7d4db56c70\",\"value\":\"0x0\",\"input\":\"0xa9059cbb000000000000000000000000bd047c533778ba615e3ff1e868f5abe9ec65928600000000000000000000000000000000000000000000000000000000000003e8\",\"nonce\":\"0x2\",\"type\":\"0x2\",\"gas\":\"0x9c40\",\"blockNumber\":\"0x1312d02\",\"blockHash\":\"0x93d0cf43d43392694d909cee3278a4d05c9f1006ca9e020f60f10a3aa0b7bafe\",\"transactionIndex\":\"0x0\"}}"
+  },
+  "e7668e857e2bb6107659d7cf388215fc": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getTransactionReceipt",
+   "url": "https://rpc.synthetic.invalid/ethereum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "eth_getTransactionReceipt",
+    "params": [
+     "0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"transactionHash\":\"0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d\",\"blockNumber\":\"0x1312d02\",\"blockHash\":\"0x93d0cf43d43392694d909cee3278a4d05c9f1006ca9e020f60f10a3aa0b7bafe\",\"from\":\"0xf2cee67145548ba5676483a62dffde38e857e410\",\"to\":\"0x589b5c33f36dea4068242c6a2e89da7d4db56c70\",\"status\":\"0x0\",\"gasUsed\":\"0x9c40\",\"effectiveGasPrice\":\"0x59682f00\",\"contractAddress\":null,\"logs\":[]}}"
+  },
+  "caa9d3825e4a9bb959868d6a71c8c4a0": {
+   "kind": "explorer",
+   "provider": "Blockscout",
+   "method": "GET /api/v2/transactions/0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d",
+   "url": "https://explorer.synthetic.invalid/ethereum/api/v2/transactions/0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d",
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"hash\":\"0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d\",\"block_number\":20000002,\"from\":{\"hash\":\"0xf2cee67145548ba5676483a62dffde38e857e410\",\"is_contract\":false,\"name\":null,\"ens_domain_name\":null},\"to\":{\"hash\":\"0x589b5c33f36dea4068242c6a2e89da7d4db56c70\",\"is_contract\":true,\"name\":null,\"ens_domain_name\":null},\"method\":\"transfer\",\"decoded_input\":null,\"revert_reason\":\"execution reverted: transfer amount exceeds balance\"}"
+  },
+  "f29aec4f03ac03d57e25385bc72abe1a": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "debug_traceTransaction",
+   "url": "https://rpc.synthetic.invalid/ethereum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "debug_traceTransaction",
+    "params": [
+     "0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d",
+     {
+      "tracer": "callTracer",
+      "tracerConfig": {
+       "onlyTopCall": false
+      },
+      "timeout": "45s"
+     }
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32601,\"message\":\"the method debug_traceTransaction does not exist/is not available\"}}"
+  },
+  "1072e73047825665f6e146372bc22102": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getBlockByNumber",
+   "url": "https://rpc.synthetic.invalid/ethereum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "eth_getBlockByNumber",
+    "params": [
+     "0x1312d02",
+     false
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{\"number\":\"0x1312d02\",\"hash\":\"0x93d0cf43d43392694d909cee3278a4d05c9f1006ca9e020f60f10a3aa0b7bafe\",\"timestamp\":\"0x6a86e602\",\"miner\":\"0x69d674ac392fffc17357c262f7a013d1fb30d081\",\"baseFeePerGas\":\"0x3b9aca00\"}}"
+  },
+  "6a11761e7df55a91664dd8c74e13383c": {
+   "kind": "explorer",
+   "provider": "Blockscout",
+   "method": "GET /api/v2/transactions/0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d/summary",
+   "url": "https://explorer.synthetic.invalid/ethereum/api/v2/transactions/0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d/summary",
+   "httpStatus": 404,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"message\":\"Not found\"}"
+  },
+  "973abdfe3143c24c75df1099081be9c8": {
+   "kind": "explorer",
+   "provider": "Blockscout",
+   "method": "GET /api/v2/transactions/0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d/internal-transactions",
+   "url": "https://explorer.synthetic.invalid/ethereum/api/v2/transactions/0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d/internal-transactions",
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"items\":[],\"next_page_params\":null}"
+  },
+  "729728e67bea67972120014fcfac7cf3": {
+   "kind": "explorer",
+   "provider": "Blockscout",
+   "method": "GET /api/v2/transactions/0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d/state-changes",
+   "url": "https://explorer.synthetic.invalid/ethereum/api/v2/transactions/0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d/state-changes",
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"items\":[{\"type\":\"coin\",\"address\":{\"hash\":\"0xf2cee67145548ba5676483a62dffde38e857e410\",\"is_contract\":false,\"name\":null,\"ens_domain_name\":null},\"change\":\"-60000000000000\",\"is_miner\":false,\"token\":null},{\"type\":\"coin\",\"address\":{\"hash\":\"0x69d674ac392fffc17357c262f7a013d1fb30d081\",\"is_contract\":false,\"name\":null,\"ens_domain_name\":null},\"change\":\"20000000000000\",\"is_miner\":true,\"token\":null}],\"next_page_params\":null}"
+  },
+  "6dc31f712bf96375cf42c35557ac1d1f": {
+   "kind": "explorer",
+   "provider": "Blockscout",
+   "method": "GET /api/v2/transactions/0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d/token-transfers",
+   "url": "https://explorer.synthetic.invalid/ethereum/api/v2/transactions/0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d/token-transfers",
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"items\":[],\"next_page_params\":null}"
+  },
+  "3263d99ae8a60f7d0b013cc393d950ca": {
+   "kind": "explorer",
+   "provider": "Blockscout",
+   "method": "GET /api/v2/transactions/0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d/logs",
+   "url": "https://explorer.synthetic.invalid/ethereum/api/v2/transactions/0x3d1c7620ac068d1195eae3374edb33b2b41611f784176e83aa01cfdb65446a2d/logs",
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"items\":[],\"next_page_params\":null}"
+  }
+ }
+}

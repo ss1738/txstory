@@ -1,0 +1,103 @@
+{
+ "generatedBy": "examples/devnet/scenario.ts",
+ "node": "anvil Version: 1.7.1",
+ "method": "cast balance <address> --block N-1 and --block N (anvil mines one transaction per block)",
+ "addresses": {
+  "sender": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+  "recipientB": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+  "recipientC": "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+  "vault": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+  "reverter": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+ },
+ "contracts": {
+  "reverter": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+  "vault": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+  "erc20": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0"
+ },
+ "transactions": [
+  {
+   "name": "split",
+   "hash": "0xa4d670d57f77054e10b64484d96899664322ec83582abc1b351a6d85e4946cb1",
+   "block": "4",
+   "status": 1,
+   "fee": "29004797959920",
+   "nativeDeltas": {
+    "sender": "-1000029004797959920",
+    "recipientB": "500000000000000000",
+    "recipientC": "500000000000000000",
+    "vault": "0",
+    "reverter": "0"
+   }
+  },
+  {
+   "name": "payAndTry",
+   "hash": "0xdce671e4526d6d277669b28b2a9108c3f291951eb893a8d716101d94a2640359",
+   "block": "5",
+   "status": 1,
+   "fee": "25875905804276",
+   "nativeDeltas": {
+    "sender": "-2000025875905804276",
+    "recipientB": "1000000000000000000",
+    "recipientC": "0",
+    "vault": "1000000000000000000",
+    "reverter": "0"
+   }
+  },
+  {
+   "name": "customError",
+   "hash": "0x27dbc58bd2861be2ea7264fd2d03aa97510ebc7ff3e00ab59a0bb114cbbe4aab",
+   "block": "6",
+   "status": 0,
+   "fee": "11128085461860",
+   "nativeDeltas": {
+    "sender": "-11128085461860",
+    "recipientB": "0",
+    "recipientC": "0",
+    "vault": "0",
+    "reverter": "0"
+   }
+  },
+  {
+   "name": "errorString",
+   "hash": "0xc8009d5420b60b2d374a86c311dbf35e76810fbbaefab545a95bd92d3e86f4ec",
+   "block": "7",
+   "status": 0,
+   "fee": "9679842095462",
+   "nativeDeltas": {
+    "sender": "-9679842095462",
+    "recipientB": "0",
+    "recipientC": "0",
+    "vault": "0",
+    "reverter": "0"
+   }
+  },
+  {
+   "name": "panic",
+   "hash": "0x026e3a537d6195ef9c983b9f32a93b100feb6454967261cb921ca2749c571ac1",
+   "block": "8",
+   "status": 0,
+   "fee": "8558643294751",
+   "nativeDeltas": {
+    "sender": "-8558643294751",
+    "recipientB": "0",
+    "recipientC": "0",
+    "vault": "0",
+    "reverter": "0"
+   }
+  },
+  {
+   "name": "tokenTransfer",
+   "hash": "0x530d21f512dc5ddfc40326a913dc248092602dbdd151fd92a413123a02ada918",
+   "block": "9",
+   "status": 1,
+   "fee": "17780979866816",
+   "nativeDeltas": {
+    "sender": "-17780979866816",
+    "recipientB": "0",
+    "recipientC": "0",
+    "vault": "0",
+    "reverter": "0"
+   }
+  }
+ ]
+}

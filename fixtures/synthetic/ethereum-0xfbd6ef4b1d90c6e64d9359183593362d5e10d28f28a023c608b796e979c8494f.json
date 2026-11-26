@@ -1,0 +1,73 @@
+{
+ "schema": "txstory-fixture-v3",
+ "chain": "ethereum",
+ "hash": "0xfbd6ef4b1d90c6e64d9359183593362d5e10d28f28a023c608b796e979c8494f",
+ "description": "Synthetic: transaction known to the node but not mined yet",
+ "recordedAt": "2026-11-26T00:00:00.000Z",
+ "recorder": "scripts/synthetic-fixtures.ts (synthetic data, not captured from any provider)",
+ "origin": "synthetic",
+ "engine": {
+  "name": "txstory",
+  "version": "0.3.0",
+  "storySchema": 3
+ },
+ "endpoints": {
+  "rpcs": [
+   {
+    "url": "https://rpc.synthetic.invalid/ethereum",
+    "provider": "Synthetic RPC (not a real provider)"
+   }
+  ],
+  "explorerApi": "https://explorer.synthetic.invalid/ethereum"
+ },
+ "options": {
+  "trace": "auto"
+ },
+ "config": {
+  "maxExplorerPages": 6,
+  "maxTokenMetadataCalls": 30,
+  "explorerApiKeyUsed": false
+ },
+ "output": {
+  "stage": "full",
+  "kind": "pending",
+  "storySha256": null,
+  "evidenceSha256": null
+ },
+ "exchanges": {
+  "24baa0ed830bc38f1f652268c088f08d": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getTransactionByHash",
+   "url": "https://rpc.synthetic.invalid/ethereum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "eth_getTransactionByHash",
+    "params": [
+     "0xfbd6ef4b1d90c6e64d9359183593362d5e10d28f28a023c608b796e979c8494f"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"hash\":\"0xfbd6ef4b1d90c6e64d9359183593362d5e10d28f28a023c608b796e979c8494f\",\"from\":\"0xf2cee67145548ba5676483a62dffde38e857e410\",\"to\":\"0xbd047c533778ba615e3ff1e868f5abe9ec659286\",\"value\":\"0x38d7ea4c68000\",\"input\":\"0x\",\"nonce\":\"0x8\",\"type\":\"0x2\",\"gas\":\"0x5208\",\"blockNumber\":null,\"blockHash\":null,\"transactionIndex\":null}}"
+  },
+  "d30c46dbed9ec7e6c1abfb2782d7e173": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getTransactionReceipt",
+   "url": "https://rpc.synthetic.invalid/ethereum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "eth_getTransactionReceipt",
+    "params": [
+     "0xfbd6ef4b1d90c6e64d9359183593362d5e10d28f28a023c608b796e979c8494f"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":null}"
+  }
+ }
+}

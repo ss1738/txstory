@@ -1,0 +1,44 @@
+{
+  "name": "txstory",
+  "version": "0.3.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "description": "Explain EVM transactions with evidence: browser UI, CLI, HTTP API and library on one engine.",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "txstory": "dist/node/cli/main.js"
+  },
+  "scripts": {
+    "dev": "node --import tsx scripts/dev.ts",
+    "dev:server": "tsx watch src/server/index.ts",
+    "dev:client": "vite",
+    "build": "npm run typecheck && vite build && tsc -p tsconfig.server.json",
+    "start": "node dist/node/server/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.server.json --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "txstory": "tsx src/cli/main.ts",
+    "test:captured": "vitest run --config vitest.captured.config.ts",
+    "fixtures:synthetic": "tsx scripts/synthetic-fixtures.ts"
+  },
+  "dependencies": {
+    "@noble/hashes": "^2.4.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "@types/node": "^22.20.7",
+    "@types/react": "^19.3.3",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "axe-core": "^4.14.0",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
+  }
+}

@@ -1,0 +1,292 @@
+{
+ "generatedBy": "study/verify_answer_key.py",
+ "tasks": [
+  {
+   "hash": "0xf935435dedce77233eb8855ed84277c0ebf4fbbc278f03ad34167f11446a9730",
+   "chain": "ethereum",
+   "succeeded": true,
+   "sender": "0xd47a1bdc6872ad2fd16e50149baa9924c653e624",
+   "to": "0x03353903bd49776104ba7b32df08b8de78822654",
+   "value_wei": "95021472882370",
+   "value_eth": "0.00009502147288237",
+   "fee_wei": "43254306690000",
+   "fee_eth": "0.00004325430669",
+   "eth_change_from_rpc_only_wei": "-138275779572370",
+   "explorer_sender_changes": {
+    "ETH": "-138275779572370"
+   },
+   "sender_token_changes": {},
+   "sender_outgoing_transfer_count": {},
+   "sender_outgoing_transfers": {},
+   "nft_transfers": [],
+   "log_count": 0,
+   "task": "T1",
+   "set": "X"
+  },
+  {
+   "hash": "0x645ab583f1ea8edc7699314314d236869557971b76723be237d004d4c849df0a",
+   "chain": "ethereum",
+   "succeeded": true,
+   "sender": "0xf89d7b9c864f589bbf53a82105107622b35eaa40",
+   "to": "0xe03a8811211f04d1206a5f8bdf32cdfbc5e6ea98",
+   "value_wei": "252540470000000000",
+   "value_eth": "0.25254047",
+   "fee_wei": "43380716316000",
+   "fee_eth": "0.000043380716316",
+   "eth_change_from_rpc_only_wei": "-252583850716316000",
+   "explorer_sender_changes": {
+    "ETH": "-252583850716316000"
+   },
+   "sender_token_changes": {},
+   "sender_outgoing_transfer_count": {},
+   "sender_outgoing_transfers": {},
+   "nft_transfers": [],
+   "log_count": 0,
+   "task": "T1",
+   "set": "Y"
+  },
+  {
+   "hash": "0xec893ce03b8b8ef2d5e0d5edb9db9f63ad0972e2a6845504bc31cca395869804",
+   "chain": "ethereum",
+   "succeeded": true,
+   "sender": "0x3d17b8818b7bf0fa824daf37769c687699c484cb",
+   "to": "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
+   "value_wei": "0",
+   "value_eth": "0",
+   "fee_wei": "8696017910850",
+   "fee_eth": "0.00000869601791085",
+   "eth_change_from_rpc_only_wei": "-8696017910850",
+   "explorer_sender_changes": {
+    "ETH": "-8696017910850",
+    "0x80122c6a83c8202ea365233363d3f4837d13e888": "-13022183624750241637229919",
+    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2": "68300597997526149"
+   },
+   "sender_token_changes": {
+    "0x80122c6a83c8202ea365233363d3f4837d13e888": {
+     "raw": "-13022183624750241637229919",
+     "symbol": "M87",
+     "amount": "-13022183.624750241637229919"
+    },
+    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2": {
+     "raw": "68300597997526149",
+     "symbol": "WETH",
+     "amount": "0.068300597997526149"
+    }
+   },
+   "sender_outgoing_transfer_count": {
+    "M87": 2
+   },
+   "sender_outgoing_transfers": {
+    "M87": [
+     "390665.508742507249116897",
+     "12631518.116007734388113022"
+    ]
+   },
+   "nft_transfers": [],
+   "log_count": 5,
+   "task": "T2",
+   "set": "X"
+  },
+  {
+   "hash": "0xfe989499443b4aff4d8059b21cab89ea18fd3538f80630c970a878611fc970d3",
+   "chain": "ethereum",
+   "succeeded": true,
+   "sender": "0x12842151d19c14a845ca685511c8d93ad2fdc021",
+   "to": "0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad",
+   "value_wei": "0",
+   "value_eth": "0",
+   "fee_wei": "47334463543650",
+   "fee_eth": "0.00004733446354365",
+   "eth_change_from_rpc_only_wei": "-47334463543650",
+   "explorer_sender_changes": {
+    "ETH": "-47334463543650",
+    "0x1487bd704fa05a222b0adb50dc420f001f003045": "1000000000000000000000000",
+    "0xdac17f958d2ee523a2206206994597c13d831ec7": "-202396702"
+   },
+   "sender_token_changes": {
+    "0x1487bd704fa05a222b0adb50dc420f001f003045": {
+     "raw": "1000000000000000000000000",
+     "symbol": "CCDAO",
+     "amount": "1000000"
+    },
+    "0xdac17f958d2ee523a2206206994597c13d831ec7": {
+     "raw": "-202396702",
+     "symbol": "USDT",
+     "amount": "-202.396702"
+    }
+   },
+   "sender_outgoing_transfer_count": {
+    "USDT": 3
+   },
+   "sender_outgoing_transfers": {
+    "USDT": [
+     "90.796597",
+     "81.088611",
+     "30.511494"
+    ]
+   },
+   "nft_transfers": [],
+   "log_count": 15,
+   "task": "T2",
+   "set": "Y"
+  },
+  {
+   "hash": "0xdfd1aafcddded21d650c737b90940226b68e82902dfa807b8059e012f1fd0618",
+   "chain": "ethereum",
+   "succeeded": false,
+   "sender": "0x0f96f7ec3f69f52f688b685721d6ef3da3cac348",
+   "to": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+   "value_wei": "0",
+   "value_eth": "0",
+   "fee_wei": "19175306280000",
+   "fee_eth": "0.00001917530628",
+   "eth_change_from_rpc_only_wei": "-19175306280000",
+   "explorer_sender_changes": {
+    "ETH": "-19175306280000"
+   },
+   "sender_token_changes": {},
+   "sender_outgoing_transfer_count": {},
+   "sender_outgoing_transfers": {},
+   "nft_transfers": [],
+   "log_count": 0,
+   "task": "T3",
+   "set": "X"
+  },
+  {
+   "hash": "0x31b4768c1940d3a02bdc9616b2dff7587b404a5ae3cc1fee8be10724a574d3a8",
+   "chain": "ethereum",
+   "succeeded": false,
+   "sender": "0x6d39a79467bc26722dc91f7a7c81b2fa74391e94",
+   "to": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+   "value_wei": "0",
+   "value_eth": "0",
+   "fee_wei": "2894506886684",
+   "fee_eth": "0.000002894506886684",
+   "eth_change_from_rpc_only_wei": "-2894506886684",
+   "explorer_sender_changes": {
+    "ETH": "-2894506886684"
+   },
+   "sender_token_changes": {},
+   "sender_outgoing_transfer_count": {},
+   "sender_outgoing_transfers": {},
+   "nft_transfers": [],
+   "log_count": 0,
+   "task": "T3",
+   "set": "Y"
+  },
+  {
+   "hash": "0x1f9753fbf97af6c0cf0d00e7893448203f944644f7d96aa76bc563b36385198a",
+   "chain": "ethereum",
+   "succeeded": true,
+   "sender": "0x28dda46bdc0aeb3b4e58e6a9a3774875729367a0",
+   "to": "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d",
+   "value_wei": "0",
+   "value_eth": "0",
+   "fee_wei": "10488695743197",
+   "fee_eth": "0.000010488695743197",
+   "eth_change_from_rpc_only_wei": "-10488695743197",
+   "explorer_sender_changes": {
+    "ETH": "-10488695743197"
+   },
+   "sender_token_changes": {},
+   "sender_outgoing_transfer_count": {},
+   "sender_outgoing_transfers": {},
+   "nft_transfers": [
+    {
+     "contract": "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d",
+     "tokenId": "3703",
+     "from": "0x28dda46bdc0aeb3b4e58e6a9a3774875729367a0",
+     "to": "0xe445283d46d814af9ab554d5afb40afb28b91935",
+     "logIndex": 911,
+     "symbol": "BAYC"
+    }
+   ],
+   "log_count": 2,
+   "task": "T4",
+   "set": "X"
+  },
+  {
+   "hash": "0xd711cffdf621402988b430348bd8953aad0d67b61aa570fc0537326500bbc517",
+   "chain": "ethereum",
+   "succeeded": true,
+   "sender": "0x74742ab3e07464befede9c5d4f27ac4fc6a45cfb",
+   "to": "0xbd3531da5cf5857e7cfaa92426877b022e612cf8",
+   "value_wei": "0",
+   "value_eth": "0",
+   "fee_wei": "58008278532776",
+   "fee_eth": "0.000058008278532776",
+   "eth_change_from_rpc_only_wei": "-58008278532776",
+   "explorer_sender_changes": {
+    "ETH": "-58008278532776"
+   },
+   "sender_token_changes": {},
+   "sender_outgoing_transfer_count": {},
+   "sender_outgoing_transfers": {},
+   "nft_transfers": [
+    {
+     "contract": "0xbd3531da5cf5857e7cfaa92426877b022e612cf8",
+     "tokenId": "1484",
+     "from": "0x74742ab3e07464befede9c5d4f27ac4fc6a45cfb",
+     "to": "0x52d1a431cf8b6811a987104fd4938f026319f6d1",
+     "logIndex": 722,
+     "symbol": "PPG"
+    }
+   ],
+   "log_count": 2,
+   "task": "T4",
+   "set": "Y"
+  },
+  {
+   "hash": "0x783cf8c07a02931b7271444c71524f8b29174bafbd74cec382ae802a87ff8a69",
+   "chain": "ethereum",
+   "succeeded": true,
+   "sender": "0x31b47c9b70f6ed771457b99ed92585938e2c43cf",
+   "to": "0x901b1f018ced4d518cd577c930d5dccef6369d2c",
+   "value_wei": "1756993319197619500",
+   "value_eth": "1.7569933191976195",
+   "fee_wei": "666865560409211319",
+   "fee_eth": "0.666865560409211319",
+   "eth_change_from_rpc_only_wei": "-2423858879606830819",
+   "explorer_sender_changes": {
+    "ETH": "-1975363018468247748"
+   },
+   "sender_token_changes": {},
+   "sender_outgoing_transfer_count": {},
+   "sender_outgoing_transfers": {},
+   "nft_transfers": [],
+   "log_count": 949,
+   "task": "T5",
+   "set": "X"
+  },
+  {
+   "hash": "0x55696a279cd550531b7f8ef4d8d234c2b5504fd5bc8dcc19f768d878ca484a83",
+   "chain": "ethereum",
+   "succeeded": true,
+   "sender": "0xe0733848c2e618a44b5993f436c36d8ef47dc9ce",
+   "to": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "value_wei": "43809903021250563",
+   "value_eth": "0.043809903021250563",
+   "fee_wei": "57543213848088",
+   "fee_eth": "0.000057543213848088",
+   "eth_change_from_rpc_only_wei": "-43867446235098651",
+   "explorer_sender_changes": null,
+   "sender_token_changes": {
+    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2": {
+     "raw": "43809903021250563",
+     "symbol": "WETH",
+     "amount": "0.043809903021250563"
+    }
+   },
+   "sender_outgoing_transfer_count": {},
+   "sender_outgoing_transfers": {},
+   "nft_transfers": [],
+   "log_count": 1,
+   "task": "T5",
+   "set": "Y",
+   "explorer_sender_changes_late_fetch": {
+    "retrievedAt": "2026-11-26T11:52:37.233106+00:00",
+    "ETH": "-43867446235098651"
+   }
+  }
+ ]
+}

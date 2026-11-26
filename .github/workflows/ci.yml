@@ -1,0 +1,106 @@
+# Continuous integration. Runs without secrets and without live providers:
+# every test uses recordings, local fakes or in-process servers.
+# Third-party actions are pinned to full commit SHAs (tag noted alongside);
+# updates arrive as reviewed Dependabot PRs (.github/dependabot.yml).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:          # never pull_request_target: untrusted PR code gets no secrets and no write token
+
+permissions:
+  contents: read         # least privilege for every job
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 22.19.0
+  GITLEAKS_VERSION: 8.30.1
+  GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+
+jobs:
+  checks:
+    name: typecheck, build, unit/integration, CLI, docs examples, study kit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npm ci
+      - name: Dependency audit (production dependencies)
+        run: npm audit --omit=dev --audit-level=high
+      - name: Dependency audit (all, report only)
+        run: npm audit --audit-level=high || echo "::warning::dev-dependency advisories found (see log)"
+      - run: npm run build            # includes both typechecks
+      - name: Unit and integration tests (offline; recordings, fakes, in-process servers)
+        run: npm test
+      - name: CLI from the build (offline recording)
+        run: |
+          node dist/node/cli/main.js replay fixtures/devnet/anvil-0xdce671e4526d6d277669b28b2a9108c3f291951eb893a8d716101d94a2640359.json --json > /tmp/replay.json
+          node -e "const d=require('/tmp/replay.json'); if(!d.ok||!d.check.sameOutput) process.exit(1)"
+      - name: Library example
+        run: npx tsx examples/library/explain.ts
+      - name: Third-party notices are current
+        run: node scripts/third-party.mjs | diff - THIRD_PARTY_NOTICES.md
+      - name: Synthetic recordings match their definitions (regenerate, expect no diff)
+        run: |
+          npx tsx scripts/synthetic-fixtures.ts
+          git diff --exit-code -- fixtures/synthetic
+      - name: Study kit (scorer self-test; answer-key check needs private captured recordings)
+        run: |
+          python3 study/score.py --self-test
+          set +e; python3 study/verify_answer_key.py; code=$?; set -e
+          test "$code" = "2"   # clean refusal without the captured recordings
+
+  browser:
+    name: browser journeys (Playwright, recorded mode)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+        env: { TXSTORY_E2E_BROWSER: chromium }
+
+  secrets:
+    name: secret scan (full history)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0, persist-credentials: false }
+      - name: Install gitleaks (pinned, checksum-verified)
+        run: |
+          curl -sSfL -o gitleaks.tgz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gitleaks.tgz" | sha256sum -c -
+          tar -xzf gitleaks.tgz gitleaks
+      - run: ./gitleaks detect --no-banner --redact --log-opts="--all"
+
+  container:
+    name: container from source (build, run, inspect; nothing is pushed)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - run: docker build -t txstory:ci .
+      - name: Runs as non-root, serves recorded examples, no study data in image
+        run: |
+          test "$(docker run --rm --entrypoint id txstory:ci -u)" = "1000"
+          if docker run --rm --entrypoint sh txstory:ci -c 'find /app -path /app/node_modules -prune -o \( -name "*.csv" -o -name ".env*" -o -name study -o -name ".git" \) -print' | grep .; then
+            echo "unexpected files in the image"; exit 1
+          fi
+          docker run -d --name txstory-ci -e TXSTORY_MODE=recorded -p 127.0.0.1:8787:8787 txstory:ci
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8787/api/health && break; sleep 1; done
+          curl -sf http://127.0.0.1:8787/api/example/ethereum/0xec893ce03b8b8ef2d5e0d5edb9db9f63ad0972e2a6845504bc31cca395869804 > /dev/null
+          curl -sf http://127.0.0.1:8787/tx/ethereum/0xec893ce03b8b8ef2d5e0d5edb9db9f63ad0972e2a6845504bc31cca395869804 | grep -q 'id="root"'
+          docker stop txstory-ci && test "$(docker inspect txstory-ci --format '{{.State.ExitCode}}')" = "0"

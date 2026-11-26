@@ -1,0 +1,169 @@
+{
+ "schema": "txstory-fixture-v3",
+ "chain": "optimism",
+ "hash": "0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1",
+ "description": "Synthetic: OP Mainnet transfer with an L1 data fee",
+ "recordedAt": "2026-11-26T00:00:00.000Z",
+ "recorder": "scripts/synthetic-fixtures.ts (synthetic data, not captured from any provider)",
+ "origin": "synthetic",
+ "engine": {
+  "name": "txstory",
+  "version": "0.3.0",
+  "storySchema": 3
+ },
+ "endpoints": {
+  "rpcs": [
+   {
+    "url": "https://rpc.synthetic.invalid/optimism",
+    "provider": "Synthetic RPC (not a real provider)"
+   }
+  ],
+  "explorerApi": "https://explorer.synthetic.invalid/optimism"
+ },
+ "options": {
+  "trace": "auto"
+ },
+ "config": {
+  "maxExplorerPages": 6,
+  "maxTokenMetadataCalls": 30,
+  "explorerApiKeyUsed": false
+ },
+ "output": {
+  "stage": "full",
+  "kind": "ok",
+  "storySha256": "ecbee3380e589ee4a2fae27d546aee5091a3dead6a625ab3d3db8dbf050a8b50",
+  "evidenceSha256": "0f12b507ba112b75ef0f962975393db271738c4f0d7d4885f800fd5e1d84741c"
+ },
+ "exchanges": {
+  "9162503862193cd2599e62f826247e69": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getTransactionByHash",
+   "url": "https://rpc.synthetic.invalid/optimism",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "eth_getTransactionByHash",
+    "params": [
+     "0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"hash\":\"0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1\",\"from\":\"0xf2cee67145548ba5676483a62dffde38e857e410\",\"to\":\"0xbd047c533778ba615e3ff1e868f5abe9ec659286\",\"value\":\"0x16345785d8a0000\",\"input\":\"0x\",\"nonce\":\"0x9\",\"type\":\"0x2\",\"gas\":\"0x5208\",\"blockNumber\":\"0x7bfa482\",\"blockHash\":\"0xf69a56cac480565e6fc451d6cbff50ff507964acce21aece472056dd4cc57d66\",\"transactionIndex\":\"0x0\"}}"
+  },
+  "d0025053940d9ab01ce8add3ab819da1": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getTransactionReceipt",
+   "url": "https://rpc.synthetic.invalid/optimism",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "eth_getTransactionReceipt",
+    "params": [
+     "0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"transactionHash\":\"0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1\",\"blockNumber\":\"0x7bfa482\",\"blockHash\":\"0xf69a56cac480565e6fc451d6cbff50ff507964acce21aece472056dd4cc57d66\",\"from\":\"0xf2cee67145548ba5676483a62dffde38e857e410\",\"to\":\"0xbd047c533778ba615e3ff1e868f5abe9ec659286\",\"status\":\"0x1\",\"gasUsed\":\"0x5208\",\"effectiveGasPrice\":\"0xf4240\",\"contractAddress\":null,\"logs\":[],\"l1Fee\":\"0x5d21dba00\"}}"
+  },
+  "a9f2a5e3cf4d941fe8cf61f465dedbed": {
+   "kind": "explorer",
+   "provider": "Blockscout",
+   "method": "GET /api/v2/transactions/0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1",
+   "url": "https://explorer.synthetic.invalid/optimism/api/v2/transactions/0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1",
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"hash\":\"0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1\",\"block_number\":130000002,\"from\":{\"hash\":\"0xf2cee67145548ba5676483a62dffde38e857e410\",\"is_contract\":false,\"name\":null,\"ens_domain_name\":null},\"to\":{\"hash\":\"0xbd047c533778ba615e3ff1e868f5abe9ec659286\",\"is_contract\":false,\"name\":null,\"ens_domain_name\":null},\"method\":null,\"decoded_input\":null,\"revert_reason\":null}"
+  },
+  "c7e04e876bb7eddc9ffa28926b177121": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "debug_traceTransaction",
+   "url": "https://rpc.synthetic.invalid/optimism",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "debug_traceTransaction",
+    "params": [
+     "0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1",
+     {
+      "tracer": "callTracer",
+      "tracerConfig": {
+       "onlyTopCall": false
+      },
+      "timeout": "45s"
+     }
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32601,\"message\":\"the method debug_traceTransaction does not exist/is not available\"}}"
+  },
+  "472d89443354675c9d6654fccd8a42bd": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getBlockByNumber",
+   "url": "https://rpc.synthetic.invalid/optimism",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "eth_getBlockByNumber",
+    "params": [
+     "0x7bfa482",
+     false
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{\"number\":\"0x7bfa482\",\"hash\":\"0xf69a56cac480565e6fc451d6cbff50ff507964acce21aece472056dd4cc57d66\",\"timestamp\":\"0x6955b9c8\",\"miner\":\"0x4200000000000000000000000000000000000011\",\"baseFeePerGas\":\"0xdbba0\"}}"
+  },
+  "9794ee25d7d0cf1ff901bfb5837342d5": {
+   "kind": "explorer",
+   "provider": "Blockscout",
+   "method": "GET /api/v2/transactions/0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1/summary",
+   "url": "https://explorer.synthetic.invalid/optimism/api/v2/transactions/0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1/summary",
+   "httpStatus": 404,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"message\":\"Not found\"}"
+  },
+  "cb458ad00e9a9ea53274d468f5bba567": {
+   "kind": "explorer",
+   "provider": "Blockscout",
+   "method": "GET /api/v2/transactions/0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1/internal-transactions",
+   "url": "https://explorer.synthetic.invalid/optimism/api/v2/transactions/0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1/internal-transactions",
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"items\":[],\"next_page_params\":null}"
+  },
+  "cb283681c522efd486dbb083fd09acd8": {
+   "kind": "explorer",
+   "provider": "Blockscout",
+   "method": "GET /api/v2/transactions/0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1/state-changes",
+   "url": "https://explorer.synthetic.invalid/optimism/api/v2/transactions/0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1/state-changes",
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"items\":[{\"type\":\"coin\",\"address\":{\"hash\":\"0xf2cee67145548ba5676483a62dffde38e857e410\",\"is_contract\":false,\"name\":null,\"ens_domain_name\":null},\"change\":\"-100000046000000000\",\"is_miner\":false,\"token\":null},{\"type\":\"coin\",\"address\":{\"hash\":\"0xbd047c533778ba615e3ff1e868f5abe9ec659286\",\"is_contract\":false,\"name\":null,\"ens_domain_name\":null},\"change\":\"100000000000000000\",\"is_miner\":false,\"token\":null}],\"next_page_params\":null}"
+  },
+  "9fee26216651cc86343c732a9713dfd7": {
+   "kind": "explorer",
+   "provider": "Blockscout",
+   "method": "GET /api/v2/transactions/0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1/token-transfers",
+   "url": "https://explorer.synthetic.invalid/optimism/api/v2/transactions/0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1/token-transfers",
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"items\":[],\"next_page_params\":null}"
+  },
+  "343c9e7fcf1b02d906fd028bf0154868": {
+   "kind": "explorer",
+   "provider": "Blockscout",
+   "method": "GET /api/v2/transactions/0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1/logs",
+   "url": "https://explorer.synthetic.invalid/optimism/api/v2/transactions/0x4ab35e9b84f5766eb1013bcd28e87b02b08f9fcc5a88ad258d47ced23b985fb1/logs",
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"items\":[],\"next_page_params\":null}"
+  }
+ }
+}

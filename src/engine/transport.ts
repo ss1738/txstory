@@ -1,0 +1,357 @@
+/**
+ * HTTP transport with provenance. Live requests are bounded (timeout, size);
+ * recorded mode replays fixture files that store the original response body,
+ * HTTP status, and retrieval time.
+ */
+import { createHash } from 'node:crypto';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { legacyRedactUrlV1, redactUrl } from './config.js';
+import type { DataMode } from '../core/types.js';
+
+export interface TransportRequest {
+  kind: 'rpc' | 'explorer';
+  provider: string;
+  method: string; // human label: 'eth_getTransactionReceipt' / 'GET /api/v2/...'
+  url: string;
+  body?: unknown; // JSON body for POST
+  /** Optional per-request timeout (e.g. slow explorer endpoints). Not part of request identity. */
+  timeoutMs?: number;
+}
+
+export interface TransportResponse {
+  ok: boolean;
+  httpStatus: number;
+  text: string;
+  sha256: string;
+  retrievedAt: string;
+  mode: DataMode;
+  /** Set when the request did not complete (timeout, network, size). */
+  failure?: string;
+}
+
+export interface Transport {
+  send(req: TransportRequest): Promise<TransportResponse>;
+}
+
+const bodyText = (req: TransportRequest) => (req.body === undefined ? '' : JSON.stringify(req.body));
+
+/**
+ * Private request identity for in-memory caching and in-flight coalescing.
+ * Hashes the FULL URL (including any credential) so endpoints that differ in
+ * authentication or configuration never share entries. Never persisted or logged.
+ */
+export function privateRequestKey(req: TransportRequest): string {
+  return createHash('sha256').update(`private-v1\n${req.kind}\n${req.url}\n${bodyText(req)}`).digest('hex');
+}
+
+/**
+ * Persisted fixture identity (schema v2): the public, credential-redacted URL,
+ * which keeps transaction hashes and addresses, plus the request body.
+ */
+export function fixtureRequestKey(req: TransportRequest): string {
+  return createHash('sha256').update(`fixture-v2\n${req.kind}\n${redactUrl(req.url)}\n${bodyText(req)}`).digest('hex').slice(0, 32);
+}
+
+/**
+ * Fixture schema v1 key. It collides across transactions (the hash was redacted),
+ * so it is only ever used inside RecordedTransport.forFixture for a v1 file, where
+ * every lookup is additionally checked to concern that fixture's own transaction.
+ */
+export function legacyFixtureKeyV1(req: TransportRequest): string {
+  return createHash('sha256').update(`${req.kind}\n${legacyRedactUrlV1(req.url)}\n${bodyText(req)}`).digest('hex').slice(0, 24);
+}
+
+const sha = (text: string) => createHash('sha256').update(text).digest('hex');
+
+export class LiveTransport implements Transport {
+  constructor(private opts: { timeoutMs: number; maxBytes: number; userAgent: string; fetchImpl?: typeof fetch }) {}
+
+  async send(req: TransportRequest): Promise<TransportResponse> {
+    const retrievedAt = new Date().toISOString();
+    const controller = new AbortController();
+    const timeoutMs = req.timeoutMs ?? this.opts.timeoutMs;
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await (this.opts.fetchImpl ?? fetch)(req.url, {
+        method: req.body === undefined ? 'GET' : 'POST',
+        headers: {
+          'user-agent': this.opts.userAgent,
+          accept: 'application/json',
+          ...(req.body === undefined ? {} : { 'content-type': 'application/json' }),
+        },
+        body: req.body === undefined ? undefined : JSON.stringify(req.body),
+        signal: controller.signal,
+        redirect: 'follow',
+      });
+      const text = await readLimited(res, this.opts.maxBytes);
+      return { ok: res.ok, httpStatus: res.status, text, sha256: sha(text), retrievedAt, mode: 'live' };
+    } catch (err) {
+      const failure = controller.signal.aborted ? `timed out after ${timeoutMs} ms` : err instanceof SizeLimitError ? err.message : 'network error';
+      return { ok: false, httpStatus: 0, text: '', sha256: sha(''), retrievedAt, mode: 'live', failure };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+}
+
+class SizeLimitError extends Error {}
+
+async function readLimited(res: Response, maxBytes: number): Promise<string> {
+  const declared = Number(res.headers.get('content-length') ?? '0');
+  if (declared > maxBytes) throw new SizeLimitError(`response larger than ${maxBytes} bytes`);
+  if (!res.body) return '';
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      throw new SizeLimitError(`response larger than ${maxBytes} bytes`);
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks).toString('utf8');
+}
+
+/** On-disk fixture format: one file per transaction, many recorded exchanges. */
+/** Failure text for a request that a recording does not contain (replay never uses the network). */
+export const NOT_RECORDED = 'not present in the recording (replay never uses the network)';
+
+export const FIXTURE_SCHEMA_V1 = 'txstory-fixture-v1';
+export const FIXTURE_SCHEMA_V2 = 'txstory-fixture-v2';
+export const FIXTURE_SCHEMA_V3 = 'txstory-fixture-v3';
+
+export interface FixtureFile {
+  /** v1 files are keyed by legacyFixtureKeyV1; v2 files by fixtureRequestKey. */
+  schema: typeof FIXTURE_SCHEMA_V1 | typeof FIXTURE_SCHEMA_V2 | typeof FIXTURE_SCHEMA_V3;
+  chain: string;
+  hash: string;
+  description: string;
+  recordedAt: string;
+  recorder: string;
+  /**
+   * Where the responses came from: captured from real providers (default when
+   * absent), captured from a local devnet node, or synthetic (written by a
+   * generator, not real provider data). Replay labels synthetic sources as such.
+   */
+  origin?: 'captured' | 'local-devnet' | 'synthetic';
+  /** Analysis options the recording was made with (absent in older files: no traces). */
+  options?: { trace?: 'auto' | 'off' };
+  exchanges: Record<string, {
+    kind: 'rpc' | 'explorer';
+    provider: string;
+    method: string;
+    url: string; // redacted
+    body?: unknown;
+    httpStatus: number;
+    retrievedAt: string;
+    failure?: string;
+    text: string;
+  }>;
+}
+
+/** File names fixturePath produces: `<network>-0x<64 hex>.json`. Other files in a fixtures directory are not recordings. */
+export const RECORDING_FILE_NAME = /^[a-z][a-z0-9-]{1,31}-0x[0-9a-f]{64}\.json$/;
+
+export function fixturePath(dir: string, chain: string, hash: string): string {
+  return join(dir, `${chain}-${hash.toLowerCase()}.json`);
+}
+
+export class RecordedTransport implements Transport {
+  private cache = new Map<string, FixtureFile | null>();
+  private dirs: string[];
+  /** One directory, or several separated by commas (searched in order). */
+  constructor(dir: string) { this.dirs = dir.split(',').map((d) => d.trim()).filter(Boolean); }
+
+  async load(chain: string, hash: string): Promise<FixtureFile | null> {
+    const key = `${chain}:${hash.toLowerCase()}`;
+    if (this.cache.has(key)) return this.cache.get(key)!;
+    try {
+      let text: string | null = null;
+      for (const d of this.dirs) { try { text = await readFile(fixturePath(d, chain, hash), 'utf8'); break; } catch { /* next */ } }
+      if (text === null) throw new Error('not found');
+      const f = JSON.parse(text) as FixtureFile;
+      const known = f.schema === FIXTURE_SCHEMA_V1 || f.schema === FIXTURE_SCHEMA_V2 || f.schema === FIXTURE_SCHEMA_V3;
+      // A fixture must describe exactly the transaction it is filed under.
+      const valid = known && f.chain === chain && typeof f.hash === 'string' && f.hash.toLowerCase() === hash.toLowerCase();
+      this.cache.set(key, valid ? f : null);
+      return valid ? f : null;
+    } catch {
+      this.cache.set(key, null);
+      return null;
+    }
+  }
+
+  /** Bound to a single fixture for the duration of a build. */
+  forFixture(fixture: FixtureFile): Transport {
+    const isV2 = fixture.schema !== FIXTURE_SCHEMA_V1; // v2 and v3 share request keys
+    const fixtureHash = fixture.hash.toLowerCase();
+    const mode: DataMode = fixture.origin === 'synthetic' ? 'synthetic' : 'recorded';
+    const missing = (failure: string): TransportResponse => ({ ok: false, httpStatus: 0, text: '', sha256: sha(''), retrievedAt: fixture.recordedAt, mode, failure });
+    return {
+      send: async (req) => {
+        let key: string;
+        if (isV2) {
+          key = fixtureRequestKey(req);
+        } else {
+          // v1 compatibility: v1 keys erased transaction hashes from explorer URLs.
+          // Only answer explorer requests about this fixture's own transaction, so a
+          // v1 key can never return another transaction's data.
+          if (req.kind === 'explorer' && !req.url.toLowerCase().includes(fixtureHash)) {
+            return missing(NOT_RECORDED);
+          }
+          key = legacyFixtureKeyV1(req);
+        }
+        const ex = fixture.exchanges[key];
+        if (!ex) return missing(NOT_RECORDED);
+        return {
+          ok: ex.httpStatus >= 200 && ex.httpStatus < 300 && !ex.failure, httpStatus: ex.httpStatus, text: ex.text,
+          sha256: sha(ex.text), retrievedAt: ex.retrievedAt, mode, ...(ex.failure ? { failure: ex.failure } : {}),
+        };
+      },
+    };
+  }
+
+  async send(): Promise<TransportResponse> {
+    throw new Error('Use forFixture() to bind a recorded transport to a fixture');
+  }
+}
+
+/** Wraps a live transport and captures every exchange for writing a fixture. */
+export class RecordingTransport implements Transport {
+  readonly exchanges: FixtureFile['exchanges'] = {};
+  constructor(private inner: Transport) {}
+
+  async send(req: TransportRequest): Promise<TransportResponse> {
+    const res = await this.inner.send(req);
+    this.exchanges[fixtureRequestKey(req)] = {
+      kind: req.kind, provider: req.provider, method: req.method, url: redactUrl(req.url),
+      ...(req.body === undefined ? {} : { body: req.body }),
+      httpStatus: res.httpStatus, retrievedAt: res.retrievedAt, ...(res.failure ? { failure: res.failure } : {}), text: res.text,
+    };
+    return res;
+  }
+
+  async save(dir: string, meta: Omit<FixtureFile, 'schema' | 'exchanges'>): Promise<string> {
+    await mkdir(dir, { recursive: true });
+    const path = fixturePath(dir, meta.chain, meta.hash);
+    const file: FixtureFile = { schema: FIXTURE_SCHEMA_V2, ...meta, exchanges: this.exchanges };
+    await writeFile(path, JSON.stringify(file, null, 1) + '\n');
+    return path;
+  }
+}
+
+/**
+ * Decides whether a live response may be reused from the cache.
+ *
+ * RPC: only well-formed JSON-RPC success envelopes with a non-null result for
+ * requests whose answer cannot change once it exists:
+ *   - eth_getTransactionByHash: only once the transaction is mined (blockNumber set)
+ *   - eth_getTransactionReceipt: only a non-null receipt
+ *   - eth_getBlockByNumber / eth_call / eth_getCode: only at an explicit block
+ *     number, never at a moving tag such as "latest" or "pending"
+ *   - eth_chainId
+ * Null results (not found / pending), error envelopes and malformed bodies are
+ * never cached, so a later retry can see a newly mined transaction.
+ *
+ * Explorer: only valid JSON objects. A transaction object without a block number
+ * (pending at the explorer) is not cached. List endpoints are cached for the
+ * cache TTL because the explorer's indexing of a mined transaction is treated
+ * as settled; this is a freshness trade-off, not a reorg-safety guarantee.
+ */
+export function isCacheableResponse(req: TransportRequest, res: TransportResponse): boolean {
+  if (!res.ok || res.failure || res.httpStatus < 200 || res.httpStatus >= 300) return false;
+  let json: unknown;
+  try { json = JSON.parse(res.text); } catch { return false; }
+  if (typeof json !== 'object' || json === null || Array.isArray(json)) return false;
+  const obj = json as Record<string, unknown>;
+  if (req.kind === 'explorer') {
+    const path = (() => { try { return new URL(req.url).pathname; } catch { return ''; } })();
+    if (/\/transactions\/0x[0-9a-fA-F]{64}$/.test(path)) return obj.block_number !== null && obj.block_number !== undefined;
+    return true;
+  }
+  if (obj.jsonrpc !== '2.0' || 'error' in obj || !('result' in obj)) return false;
+  const result = obj.result;
+  if (result === null || result === undefined) return false;
+  const body = req.body as { method?: unknown; params?: unknown } | undefined;
+  const method = typeof body?.method === 'string' ? body.method : '';
+  const params = Array.isArray(body?.params) ? body!.params as unknown[] : [];
+  const explicitBlock = (v: unknown) => typeof v === 'string' && /^0x[0-9a-fA-F]+$/.test(v);
+  switch (method) {
+    case 'eth_getTransactionByHash':
+      return typeof result === 'object' && result !== null && explicitBlock((result as Record<string, unknown>).blockNumber);
+    case 'eth_getTransactionReceipt':
+      return typeof result === 'object';
+    case 'eth_getBlockByNumber':
+      return explicitBlock(params[0]);
+    case 'eth_call':
+    case 'eth_getCode':
+      return explicitBlock(params[params.length - 1]);
+    case 'eth_chainId':
+      return true;
+    default:
+      return false;
+  }
+}
+
+/**
+ * Short-lived cache of reusable live responses (see isCacheableResponse), keyed
+ * by the private request identity. Lets the full-stage story reuse the fast
+ * stage's RPC responses.
+ *
+ * Identical requests that are in flight at the same moment are coalesced: they
+ * would receive the same upstream answer anyway. The key is the full private
+ * identity, so different resources or endpoints are never coalesced.
+ */
+export class CachingTransport implements Transport {
+  private cache = new Map<string, { at: number; res: TransportResponse; bytes: number }>();
+  private inflight = new Map<string, Promise<TransportResponse>>();
+  private totalBytes = 0;
+  constructor(
+    private inner: Transport,
+    private ttlMs: number,
+    private maxEntries = 2000,
+    private now: () => number = Date.now,
+    private cacheable: (req: TransportRequest, res: TransportResponse) => boolean = isCacheableResponse,
+    /** Upper bound on cached response text (approximate bytes). */
+    private maxBytes = 64 * 1024 * 1024,
+  ) {}
+
+  get cachedBytes(): number { return this.totalBytes; }
+
+  private evict(key: string): void {
+    const e = this.cache.get(key);
+    if (!e) return;
+    this.totalBytes -= e.bytes;
+    this.cache.delete(key);
+  }
+
+  async send(req: TransportRequest): Promise<TransportResponse> {
+    const key = privateRequestKey(req);
+    const hit = this.cache.get(key);
+    if (hit && this.now() - hit.at < this.ttlMs) return hit.res;
+    if (hit) this.evict(key);
+    const pending = this.inflight.get(key);
+    if (pending) return pending;
+    const p = this.inner.send(req).then((res) => {
+      const bytes = res.text.length * 2; // UTF-16 in memory
+      if (this.cacheable(req, res) && bytes <= this.maxBytes / 4) {
+        this.evict(key);
+        this.cache.set(key, { at: this.now(), res, bytes });
+        this.totalBytes += bytes;
+        while (this.cache.size > this.maxEntries || this.totalBytes > this.maxBytes) {
+          const oldest = this.cache.keys().next().value;
+          if (oldest === undefined) break;
+          this.evict(oldest);
+        }
+      }
+      return res;
+    }).finally(() => this.inflight.delete(key));
+    this.inflight.set(key, p);
+    return p;
+  }
+}

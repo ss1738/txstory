@@ -1,0 +1,243 @@
+{
+ "schema": "txstory-fixture-v3",
+ "chain": "anvil",
+ "hash": "0x530d21f512dc5ddfc40326a913dc248092602dbdd151fd92a413123a02ada918",
+ "description": "Devnet: tokenTransfer",
+ "recordedAt": "2026-11-26T17:02:58.726Z",
+ "recorder": "txstory 0.3.0",
+ "origin": "local-devnet",
+ "engine": {
+  "name": "txstory",
+  "version": "0.3.0",
+  "storySchema": 3
+ },
+ "endpoints": {
+  "rpcs": [
+   {
+    "url": "http://127.0.0.1:18545/",
+    "provider": "Anvil devnet RPC 1"
+   }
+  ],
+  "explorerApi": null
+ },
+ "options": {
+  "trace": "auto"
+ },
+ "config": {
+  "maxExplorerPages": 6,
+  "maxTokenMetadataCalls": 30,
+  "explorerApiKeyUsed": false
+ },
+ "network": {
+  "key": "anvil",
+  "chainId": 31337,
+  "name": "Anvil devnet",
+  "nativeSymbol": "ETH",
+  "nativeDecimals": 18,
+  "feeModel": "ethereum-l1",
+  "explorerUi": null,
+  "wrappedNative": [],
+  "builtin": false
+ },
+ "output": {
+  "stage": "full",
+  "kind": "ok",
+  "storySha256": "b33715f30d8038f12467195016e292b4df33a1abab70bd866ac31156b27b6f9b",
+  "evidenceSha256": "4cd02e53343105720289e748f7303f1110bdd6f81ec95812d59d228ed468424f"
+ },
+ "exchanges": {
+  "73c36d178c2282eca3735b0a9da7b585": {
+   "kind": "rpc",
+   "provider": "Anvil devnet RPC 1",
+   "method": "eth_getTransactionByHash",
+   "url": "http://127.0.0.1:18545/",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "eth_getTransactionByHash",
+    "params": [
+     "0x530d21f512dc5ddfc40326a913dc248092602dbdd151fd92a413123a02ada918"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T17:02:58.721Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"type\":\"0x2\",\"chainId\":\"0x7a69\",\"nonce\":\"0x8\",\"gas\":\"0xc890\",\"maxFeePerGas\":\"0x2f2bdf95\",\"maxPriorityFeePerGas\":\"0x1\",\"to\":\"0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0\",\"value\":\"0x0\",\"accessList\":[],\"input\":\"0xa9059cbb00000000000000000000000070997970c51812dc3a010c7d01b50e0d17dc79c80000000000000000000000000000000000000000000000001121d33597384000\",\"r\":\"0x54ed22d63ffee9d1a9e22fb34ec7f54ade339b27cc36d58d3f970a2898730ca7\",\"s\":\"0x6e9e540834cbd2848864c08f91b51d0f395fbe1ab5f7ead5e3cd549f9f7a5962\",\"yParity\":\"0x1\",\"v\":\"0x1\",\"hash\":\"0x530d21f512dc5ddfc40326a913dc248092602dbdd151fd92a413123a02ada918\",\"blockHash\":\"0x1ef767a3281e41bfdf57a99dda8b86e59b0ad8c9729a6b3d49597b1b8ddb365f\",\"blockNumber\":\"0x9\",\"transactionIndex\":\"0x0\",\"from\":\"0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266\",\"gasPrice\":\"0x14a4486c\",\"blockTimestamp\":\"0x6b086641\"}}"
+  },
+  "79e5cf99d5be079b68b90a21a2981dba": {
+   "kind": "rpc",
+   "provider": "Anvil devnet RPC 1",
+   "method": "eth_getTransactionReceipt",
+   "url": "http://127.0.0.1:18545/",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "eth_getTransactionReceipt",
+    "params": [
+     "0x530d21f512dc5ddfc40326a913dc248092602dbdd151fd92a413123a02ada918"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T17:02:58.721Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"type\":\"0x2\",\"status\":\"0x1\",\"cumulativeGasUsed\":\"0xc890\",\"logs\":[{\"address\":\"0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0\",\"topics\":[\"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef\",\"0x000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266\",\"0x00000000000000000000000070997970c51812dc3a010c7d01b50e0d17dc79c8\"],\"data\":\"0x0000000000000000000000000000000000000000000000001121d33597384000\",\"blockHash\":\"0x1ef767a3281e41bfdf57a99dda8b86e59b0ad8c9729a6b3d49597b1b8ddb365f\",\"blockNumber\":\"0x9\",\"blockTimestamp\":\"0x6b086641\",\"transactionHash\":\"0x530d21f512dc5ddfc40326a913dc248092602dbdd151fd92a413123a02ada918\",\"transactionIndex\":\"0x0\",\"logIndex\":\"0x0\",\"removed\":false}],\"logsBloom\":\"0x00000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040200000000000000000000000000000000000000008000000000000000000000000000000000000000000000800000000000000000100000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000200000000000000000000000002000000000000000000000000000000000000000000000000000000001000000000000400000000000000000\",\"transactionHash\":\"0x530d21f512dc5ddfc40326a913dc248092602dbdd151fd92a413123a02ada918\",\"transactionIndex\":\"0x0\",\"blockHash\":\"0x1ef767a3281e41bfdf57a99dda8b86e59b0ad8c9729a6b3d49597b1b8ddb365f\",\"blockNumber\":\"0x9\",\"gasUsed\":\"0xc890\",\"effectiveGasPrice\":\"0x14a4486c\",\"blobGasPrice\":\"0x1\",\"from\":\"0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266\",\"to\":\"0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0\",\"contractAddress\":null,\"blockTimestamp\":1795712577}}"
+  },
+  "507e6aa1dd16cbe8379a62b334fb01c2": {
+   "kind": "rpc",
+   "provider": "Anvil devnet RPC 1",
+   "method": "eth_getBlockByNumber",
+   "url": "http://127.0.0.1:18545/",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "eth_getBlockByNumber",
+    "params": [
+     "0x9",
+     false
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T17:02:58.722Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{\"hash\":\"0x1ef767a3281e41bfdf57a99dda8b86e59b0ad8c9729a6b3d49597b1b8ddb365f\",\"parentHash\":\"0xc070fd41083c758af8573186c8d104620f47e127318f1ce6700e0b0881465723\",\"sha3Uncles\":\"0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347\",\"miner\":\"0x0000000000000000000000000000000000000000\",\"stateRoot\":\"0x40b321d52ac2700e43a30dddac96aaea14c22e80b920f00eccecff183992125e\",\"transactionsRoot\":\"0xd76c9ce151179801c07fed3f579854ea8909c1c68433cce659be3b39b47d079d\",\"receiptsRoot\":\"0x033cd67f546455e5c54dfa26fd7611ea17b5a6339efd08939b0096f3605d80be\",\"logsBloom\":\"0x00000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040200000000000000000000000000000000000000008000000000000000000000000000000000000000000000800000000000000000100000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000200000000000000000000000002000000000000000000000000000000000000000000000000000000001000000000000400000000000000000\",\"difficulty\":\"0x0\",\"number\":\"0x9\",\"gasLimit\":\"0x1c9c380\",\"gasUsed\":\"0xc890\",\"timestamp\":\"0x6b086641\",\"extraData\":\"0x\",\"mixHash\":\"0x2be5d964aba6dac0935fce6e7747ff09dff0782f04891786240d507a8553d858\",\"nonce\":\"0x0000000000000000\",\"baseFeePerGas\":\"0x14a4486b\",\"withdrawalsRoot\":\"0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421\",\"blobGasUsed\":\"0x0\",\"excessBlobGas\":\"0x0\",\"parentBeaconBlockRoot\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"requestsHash\":\"0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"totalDifficulty\":\"0x0\",\"size\":\"0x31c\",\"uncles\":[],\"transactions\":[\"0x530d21f512dc5ddfc40326a913dc248092602dbdd151fd92a413123a02ada918\"],\"withdrawals\":[]}}"
+  },
+  "7ceca9ef6f131d40ca1b1ef5e44894c2": {
+   "kind": "rpc",
+   "provider": "Anvil devnet RPC 1",
+   "method": "debug_traceTransaction",
+   "url": "http://127.0.0.1:18545/",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "debug_traceTransaction",
+    "params": [
+     "0x530d21f512dc5ddfc40326a913dc248092602dbdd151fd92a413123a02ada918",
+     {
+      "tracer": "callTracer",
+      "tracerConfig": {
+       "onlyTopCall": false
+      },
+      "timeout": "45s"
+     }
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T17:02:58.722Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"from\":\"0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266\",\"gas\":\"0x7404\",\"gasUsed\":\"0xc890\",\"to\":\"0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0\",\"input\":\"0xa9059cbb00000000000000000000000070997970c51812dc3a010c7d01b50e0d17dc79c80000000000000000000000000000000000000000000000001121d33597384000\",\"output\":\"0x0000000000000000000000000000000000000000000000000000000000000001\",\"value\":\"0x0\",\"type\":\"CALL\"}}"
+  },
+  "94751f1781cdfab0ba37fb4ebea9db0b": {
+   "kind": "rpc",
+   "provider": "Anvil devnet RPC 1",
+   "method": "eth_call",
+   "url": "http://127.0.0.1:18545/",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 4,
+    "method": "eth_call",
+    "params": [
+     {
+      "to": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+      "data": "0x95d89b41"
+     },
+     "0x9"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T17:02:58.723Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":4,\"error\":{\"code\":3,\"message\":\"execution reverted\",\"data\":\"0x\"}}"
+  },
+  "c7e18f6c4e728ad25b5daefaedf89a0a": {
+   "kind": "rpc",
+   "provider": "Anvil devnet RPC 1",
+   "method": "eth_call",
+   "url": "http://127.0.0.1:18545/",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 6,
+    "method": "eth_call",
+    "params": [
+     {
+      "to": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+      "data": "0x313ce567"
+     },
+     "0x9"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T17:02:58.723Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":6,\"error\":{\"code\":3,\"message\":\"execution reverted\",\"data\":\"0x\"}}"
+  },
+  "bb053c585521863ab9513e8e6da0ba3d": {
+   "kind": "rpc",
+   "provider": "Anvil devnet RPC 1",
+   "method": "eth_call",
+   "url": "http://127.0.0.1:18545/",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 5,
+    "method": "eth_call",
+    "params": [
+     {
+      "to": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+      "data": "0x06fdde03"
+     },
+     "0x9"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T17:02:58.723Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":5,\"error\":{\"code\":3,\"message\":\"execution reverted\",\"data\":\"0x\"}}"
+  },
+  "45d20945a04da27c2a28cacf6664b305": {
+   "kind": "rpc",
+   "provider": "Anvil devnet RPC 1",
+   "method": "eth_getCode",
+   "url": "http://127.0.0.1:18545/",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 8,
+    "method": "eth_getCode",
+    "params": [
+     "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+     "0x9"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T17:02:58.724Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":8,\"result\":\"0x\"}"
+  },
+  "2bb4650ed334df7d5a1379ea222f4543": {
+   "kind": "rpc",
+   "provider": "Anvil devnet RPC 1",
+   "method": "eth_getCode",
+   "url": "http://127.0.0.1:18545/",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 9,
+    "method": "eth_getCode",
+    "params": [
+     "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+     "0x9"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T17:02:58.724Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":9,\"result\":\"0x\"}"
+  },
+  "1d177ad33431eae0777f8706d7ddb568": {
+   "kind": "rpc",
+   "provider": "Anvil devnet RPC 1",
+   "method": "eth_getCode",
+   "url": "http://127.0.0.1:18545/",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 7,
+    "method": "eth_getCode",
+    "params": [
+     "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+     "0x9"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T17:02:58.724Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":7,\"result\":\"0x608060405234801561000f575f5ffd5b5060043610610034575f3560e01c806370a0823114610038578063a9059cbb1461006a575b5f5ffd5b610057610046366004610143565b5f6020819052908152604090205481565b6040519081526020015b60405180910390f35b61007d610078366004610163565b61008d565b6040519015158152602001610061565b335f908152602081905260408120805483919083906100ad90849061019f565b90915550506001600160a01b0383165f90815260208190526040812080548492906100d99084906101b2565b90915550506040518281526001600160a01b0384169033907fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef9060200160405180910390a35060015b92915050565b80356001600160a01b038116811461013e575f5ffd5b919050565b5f60208284031215610153575f5ffd5b61015c82610128565b9392505050565b5f5f60408385031215610174575f5ffd5b61017d83610128565b946020939093013593505050565b634e487b7160e01b5f52601160045260245ffd5b818103818111156101225761012261018b565b808201808211156101225761012261018b56fea26469706673582212209376bdccc40249a2b52eb9b9bcee6878b54184e6a28a61e90f41c7f31528bf5d64736f6c634300081e0033\"}"
+  }
+ }
+}

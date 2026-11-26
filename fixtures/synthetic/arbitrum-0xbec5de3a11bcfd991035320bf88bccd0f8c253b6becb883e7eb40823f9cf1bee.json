@@ -1,0 +1,241 @@
+{
+ "schema": "txstory-fixture-v3",
+ "chain": "arbitrum",
+ "hash": "0xbec5de3a11bcfd991035320bf88bccd0f8c253b6becb883e7eb40823f9cf1bee",
+ "description": "Synthetic: Arbitrum token transfer; explorer refuses (HTTP 403), metadata from eth_call",
+ "recordedAt": "2026-11-26T00:00:00.000Z",
+ "recorder": "scripts/synthetic-fixtures.ts (synthetic data, not captured from any provider)",
+ "origin": "synthetic",
+ "engine": {
+  "name": "txstory",
+  "version": "0.3.0",
+  "storySchema": 3
+ },
+ "endpoints": {
+  "rpcs": [
+   {
+    "url": "https://rpc.synthetic.invalid/arbitrum",
+    "provider": "Synthetic RPC (not a real provider)"
+   }
+  ],
+  "explorerApi": "https://explorer.synthetic.invalid/arbitrum"
+ },
+ "options": {
+  "trace": "auto"
+ },
+ "config": {
+  "maxExplorerPages": 6,
+  "maxTokenMetadataCalls": 30,
+  "explorerApiKeyUsed": false
+ },
+ "output": {
+  "stage": "full",
+  "kind": "ok",
+  "storySha256": "5e74dac47d2a6d938368f4b5c10b1e50e345c80b810fc7a21e3c0fd30e8ed58e",
+  "evidenceSha256": "f54de08984d2d566dab7482c67d9777e104d2f86fc006bc01b35dcc55d065efe"
+ },
+ "exchanges": {
+  "6220dc1dda438aacbffd6d2378e353b8": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getTransactionByHash",
+   "url": "https://rpc.synthetic.invalid/arbitrum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "eth_getTransactionByHash",
+    "params": [
+     "0xbec5de3a11bcfd991035320bf88bccd0f8c253b6becb883e7eb40823f9cf1bee"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"hash\":\"0xbec5de3a11bcfd991035320bf88bccd0f8c253b6becb883e7eb40823f9cf1bee\",\"from\":\"0xf2cee67145548ba5676483a62dffde38e857e410\",\"to\":\"0xcce46fe1da5d225878c27cbef0fca795521d4a1a\",\"value\":\"0x0\",\"input\":\"0xa9059cbb000000000000000000000000bd047c533778ba615e3ff1e868f5abe9ec659286000000000000000000000000000000000000000000000000000000000012d687\",\"nonce\":\"0xb\",\"type\":\"0x2\",\"gas\":\"0xea60\",\"blockNumber\":\"0x11e1a301\",\"blockHash\":\"0x5653ac0eacc6fd11311bd0681e99dc79a6a06c0a3d759c4cdf6e77acb3532b62\",\"transactionIndex\":\"0x0\"}}"
+  },
+  "c60ef03cc1a35b55ac2dae897e7d73c5": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getTransactionReceipt",
+   "url": "https://rpc.synthetic.invalid/arbitrum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "eth_getTransactionReceipt",
+    "params": [
+     "0xbec5de3a11bcfd991035320bf88bccd0f8c253b6becb883e7eb40823f9cf1bee"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"transactionHash\":\"0xbec5de3a11bcfd991035320bf88bccd0f8c253b6becb883e7eb40823f9cf1bee\",\"blockNumber\":\"0x11e1a301\",\"blockHash\":\"0x5653ac0eacc6fd11311bd0681e99dc79a6a06c0a3d759c4cdf6e77acb3532b62\",\"from\":\"0xf2cee67145548ba5676483a62dffde38e857e410\",\"to\":\"0xcce46fe1da5d225878c27cbef0fca795521d4a1a\",\"status\":\"0x1\",\"gasUsed\":\"0xea60\",\"effectiveGasPrice\":\"0x989680\",\"contractAddress\":null,\"logs\":[{\"address\":\"0xcce46fe1da5d225878c27cbef0fca795521d4a1a\",\"topics\":[\"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef\",\"0x000000000000000000000000f2cee67145548ba5676483a62dffde38e857e410\",\"0x000000000000000000000000bd047c533778ba615e3ff1e868f5abe9ec659286\"],\"data\":\"0x000000000000000000000000000000000000000000000000000000000012d687\",\"logIndex\":\"0x0\",\"transactionHash\":\"0xbec5de3a11bcfd991035320bf88bccd0f8c253b6becb883e7eb40823f9cf1bee\",\"blockNumber\":\"0x11e1a301\",\"removed\":false}]}}"
+  },
+  "ab04a66d7fd846a29628ab683dada1ed": {
+   "kind": "explorer",
+   "provider": "Blockscout",
+   "method": "GET /api/v2/transactions/0xbec5de3a11bcfd991035320bf88bccd0f8c253b6becb883e7eb40823f9cf1bee",
+   "url": "https://explorer.synthetic.invalid/arbitrum/api/v2/transactions/0xbec5de3a11bcfd991035320bf88bccd0f8c253b6becb883e7eb40823f9cf1bee",
+   "httpStatus": 403,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "<html>Forbidden</html>"
+  },
+  "899176187c2883c82835e0242ae77782": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "debug_traceTransaction",
+   "url": "https://rpc.synthetic.invalid/arbitrum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "debug_traceTransaction",
+    "params": [
+     "0xbec5de3a11bcfd991035320bf88bccd0f8c253b6becb883e7eb40823f9cf1bee",
+     {
+      "tracer": "callTracer",
+      "tracerConfig": {
+       "onlyTopCall": false
+      },
+      "timeout": "45s"
+     }
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32601,\"message\":\"the method debug_traceTransaction does not exist/is not available\"}}"
+  },
+  "7bf5a166efd1da97245e19406009ad1e": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getBlockByNumber",
+   "url": "https://rpc.synthetic.invalid/arbitrum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "eth_getBlockByNumber",
+    "params": [
+     "0x11e1a301",
+     false
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{\"number\":\"0x11e1a301\",\"hash\":\"0x5653ac0eacc6fd11311bd0681e99dc79a6a06c0a3d759c4cdf6e77acb3532b62\",\"timestamp\":\"0x6955ba90\",\"miner\":\"0xa4b000000000000000000073657175656e636572\",\"baseFeePerGas\":\"0x989680\"}}"
+  },
+  "4727de5486484780b606fd91bb209764": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_call",
+   "url": "https://rpc.synthetic.invalid/arbitrum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 4,
+    "method": "eth_call",
+    "params": [
+     {
+      "to": "0xcce46fe1da5d225878c27cbef0fca795521d4a1a",
+      "data": "0x95d89b41"
+     },
+     "0x11e1a301"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":4,\"result\":\"0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000453594e4100000000000000000000000000000000000000000000000000000000\"}"
+  },
+  "c1cfa532d8c0ece74fd35e4ed0d27a3a": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_call",
+   "url": "https://rpc.synthetic.invalid/arbitrum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 5,
+    "method": "eth_call",
+    "params": [
+     {
+      "to": "0xcce46fe1da5d225878c27cbef0fca795521d4a1a",
+      "data": "0x06fdde03"
+     },
+     "0x11e1a301"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":5,\"result\":\"0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001853796e74686574696320417262697472756d20546f6b656e0000000000000000\"}"
+  },
+  "0bd027260f40765365ec4011e3e03b2d": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_call",
+   "url": "https://rpc.synthetic.invalid/arbitrum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 6,
+    "method": "eth_call",
+    "params": [
+     {
+      "to": "0xcce46fe1da5d225878c27cbef0fca795521d4a1a",
+      "data": "0x313ce567"
+     },
+     "0x11e1a301"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":6,\"result\":\"0x0000000000000000000000000000000000000000000000000000000000000006\"}"
+  },
+  "b3abb2df6ad0304a0a92ebed50835596": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getCode",
+   "url": "https://rpc.synthetic.invalid/arbitrum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 7,
+    "method": "eth_getCode",
+    "params": [
+     "0xcce46fe1da5d225878c27cbef0fca795521d4a1a",
+     "0x11e1a301"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":7,\"result\":\"0x6080604052\"}"
+  },
+  "3a5240e2576f06c7837c1f4de94ba38a": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getCode",
+   "url": "https://rpc.synthetic.invalid/arbitrum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 8,
+    "method": "eth_getCode",
+    "params": [
+     "0xf2cee67145548ba5676483a62dffde38e857e410",
+     "0x11e1a301"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":8,\"result\":\"0x\"}"
+  },
+  "97a193fff19eb8a545dc86f35a81ac7b": {
+   "kind": "rpc",
+   "provider": "Synthetic RPC (not a real provider)",
+   "method": "eth_getCode",
+   "url": "https://rpc.synthetic.invalid/arbitrum",
+   "body": {
+    "jsonrpc": "2.0",
+    "id": 9,
+    "method": "eth_getCode",
+    "params": [
+     "0xbd047c533778ba615e3ff1e868f5abe9ec659286",
+     "0x11e1a301"
+    ]
+   },
+   "httpStatus": 200,
+   "retrievedAt": "2026-11-26T00:00:00.000Z",
+   "text": "{\"jsonrpc\":\"2.0\",\"id\":9,\"result\":\"0x\"}"
+  }
+ }
+}
