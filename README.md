@@ -272,7 +272,7 @@ the runnable example `npx tsx examples/decoder/split.ts` and see
 - [Extending](docs/extending.md): decoders, networks, providers
 - [Self-hosting](docs/self-hosting.md), including the private-pilot configuration in [DEPLOYMENT.md](DEPLOYMENT.md)
 - [Configuration reference](docs/configuration.md)
-- [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md) · [Release notes and checklist](RELEASE.md)
+- [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md) · [Releases](RELEASE.md)
 - [Data provenance](DATA_PROVENANCE.md) · [Third-party notices](THIRD_PARTY_NOTICES.md) · [Verification record](VERIFICATION.md)
 
 ## License
