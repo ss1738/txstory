@@ -1,5 +1,52 @@
 # Releases
 
+## 0.4.1: prepared, not published
+
+Status on 2026-11-27: version changes are on the branch `release/0.4.1` for a
+release pull request. Not merged, tagged or published. The changes themselves
+were merged to `main` through pull request #10 (merge commit `8a91b44`); see
+CHANGELOG.md, "0.4.1".
+
+The hosted website is not part of this release. It still runs the `v0.4.0`
+build recorded under "Website" below, and `deploy/cloudflare/build.sh` still
+defaults to `v0.4.0`. Redeploying is a separate decision.
+
+### Review of the changes
+
+- A separate assistant performed a focused review of pull request #10. It
+  reproduced a defect in the first version of the provider-error sanitization
+  (a successful JSON-RPC result with a field named `error` was modified),
+  verified the fix in `42ffccf`, and ran the 37 tests in
+  `tests/unit/credentials.test.ts` (19) and `tests/unit/reconstruct.test.ts`
+  (18) independently.
+- There was no comprehensive security audit and no formal GitHub approval;
+  branch protection does not require one.
+
+### Validation of the release candidate (MEASURED)
+
+Run on 2026-11-27 on macOS, Node 22.19.0, on the `release/0.4.1` working tree:
+
+| Check | Result |
+|---|---|
+| Typecheck, build | Passed |
+| `npm test` | 268 passed (17 files) |
+| `npm run test:e2e`, `TXSTORY_E2E_BROWSER=chromium` | 40 passed |
+| Synthetic regeneration | Only `engine.version` changes, `0.4.0` to `0.4.1`, in the 15 synthetic recordings |
+| Offline replay of all 21 shipped recordings, outbound network denied | 20 reproduce both evidence and output digests, including the 6 devnet recordings made by TxStory 0.3.0; the pending case gives its expected "no story" result |
+| THIRD_PARTY_NOTICES.md vs generator | No difference |
+
+The version bump does not change provider evidence or output digests: the
+engine version is reported but is not part of the story digest.
+
+### Publication steps awaiting authorization
+
+1. Merge the release pull request after its checks pass.
+2. `git tag -a v0.4.1 -m "TxStory 0.4.1"` on the merge commit, push the tag,
+   and create the GitHub release from the CHANGELOG entry.
+3. Separately, if wanted: rebuild and redeploy the website from `v0.4.1`. Only
+   the browser's recording panel would change (the "Without your ABIs" result
+   and the stricter "Decoded with your ABIs" badge).
+
 ## Website
 
 Deployed 2026-11-27 at https://txstory-site.satyawansinghinuk.workers.dev.

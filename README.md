@@ -72,7 +72,7 @@ that reverts inside a `try/catch`. Nothing is fetched. Actual output (abridged):
 ```text
 Recording: anvil 0xdce671e4526d6d277669b28b2a9108c3f291951eb893a8d716101d94a2640359 (txstory-fixture-v3, recorded by TxStory 0.3.0; 5 exchanges; offline replay)
 Origin: local-devnet · recorded 2026-11-26T17:02:58.713Z · Devnet: payAndTry
-Same evidence: true · Same output: true · Rebuilt by TxStory 0.4.0
+Same evidence: true · Same output: true · Rebuilt by TxStory 0.4.1
 …
 Net balance changes (exact):
   0x0000…0000                  +0.000000000000043844 ETH

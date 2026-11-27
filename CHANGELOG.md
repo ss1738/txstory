@@ -4,57 +4,95 @@ Version numbers follow semantic versioning in spirit. During 0.x, any minor
 version may change the library surface. Serialized formats are versioned
 independently (see docs/formats.md).
 
-## Unreleased
+## 0.4.1: unreleased (prepared 2026-11-27)
+
+Fixes found in a fresh-checkout review of 0.4.0. No story, recording or
+evidence-bundle format version changes.
 
 **Fixed**
 
-- **RPC fallback on node limits.** A JSON-RPC error that describes the
-  answering node (codes -32601 and -32005, "pruned history", Geth's "does not
-  exist/is not available") now moves on to the next configured endpoint instead
-  of ending the analysis. Errors about
-  the request itself, such as a reverted `eth_call`, still stop immediately.
-  Found when PublicNode answered a block request with "pruned history
+- **Fallback when a node reports its own limits.** A JSON-RPC error that
+  describes the answering node now moves on to the next configured endpoint
+  instead of ending the analysis: codes -32601 and -32005, "pruned history",
+  and Geth's "does not exist/is not available". Errors about the request
+  itself, such as a reverted `eth_call` or invalid params, are still not
+  retried. Found when PublicNode answered a block request with "pruned history
   unavailable" while other default endpoints were configured.
-- **`replay --abi` no longer reports failure for the result it was asked for,
-  and never excuses another difference.** With user ABIs, the recording is also
-  rebuilt without them; the report adds `withoutUserAbis` (does the original
-  output still reproduce?) and `userAbisChangedOutput` (did the ABIs change any
-  decoding?). `differsOnlyByUserAbis` is true only when the evidence is the
-  same and the rebuild without ABIs reproduces both stored digests; then the
-  CLI exits 0 and the browser shows "Decoded with your ABIs". Changed evidence,
-  an already mismatching stored output, or a changed recorded stage still exit 1.
-- **Not-found and pending results say when they are inconclusive.** A null
-  answer from one endpoint is still reported, but the message now names the
-  endpoint and lists configured endpoints that could not answer.
-- **Credentials in shareable output.** A configured endpoint's URL is shown
-  only when the whole URL is trusted: an exact built-in public endpoint, a bare
-  loopback origin, or an exact URL in `EngineConfig.trustedEndpointUrls`. All
-  others, including a public host with an extra path or query and `localhost`
-  or `.invalid` URLs with userinfo, a path or a query, are withheld from
-  stories, recordings, evidence exports, API responses and CLI output
-  (`https://rpc-<n>.withheld.invalid/`). Explorer request paths are kept under
-  the placeholder so requests stay distinct. Known credential fragments are
-  removed from provider error responses before analysis and recording (transport
-  failures, non-2xx bodies, and top-level JSON-RPC `error` members only; string
-  values are scrubbed and JSON structure, ids and numeric codes are kept;
-  successful responses are never changed); malformed
-  percent encoding in a configured URL no longer throws. Previously short path
-  tokens, hostname tokens, unrecognized query parameters and secrets echoed in
-  provider errors could appear. Default, synthetic and devnet recordings are
-  unchanged.
+- **Inconclusive not-found and pending results.** A `null` answer from one
+  endpoint is still reported as not found or pending, but the message now names
+  the endpoint that answered and, when other configured endpoints could not
+  answer, says the result is not conclusive and lists them.
+- **Replaying with user ABIs (`replay --abi`, "Decode with ABI files").** A
+  replay that matches its stored digests still succeeds, with or without ABIs.
+  With user ABIs, the recording is now also rebuilt without them, and one
+  additional case succeeds (CLI exit 0, `ok: true`, browser badge "Decoded with
+  your ABIs"): the evidence is identical, the rebuild without the ABIs
+  reproduces both stored digests, and the only difference comes from the
+  supplied ABIs. Previously that case exited 1. Any other difference, such as
+  changed evidence, a stored output that already mismatched, or a changed
+  recorded stage, still fails with or without ABIs. The CLI prints both
+  results, for example
+  `Without your ABIs: same evidence true · same output true`.
+- **Provider URLs in shareable output.** A configured endpoint's URL appears in
+  stories, recordings, evidence exports, API responses and CLI output only when
+  the whole URL is trusted: an exact built-in public endpoint, a bare loopback
+  origin (scheme, host and port only), or an exact URL that library code lists
+  in `EngineConfig.trustedEndpointUrls`. Other endpoints, including a public
+  host with an extra path or query and `localhost` or `.invalid` URLs with
+  userinfo, a path or a query, are withheld as
+  `https://rpc-<n>.withheld.invalid/` or `https://explorer.withheld.invalid`
+  plus the request path TxStory generated, with the provider label kept.
+  Requests stay distinct and new recordings rebuild offline. Previously short
+  path tokens, hostname tokens and credentials under unrecognized query names
+  could appear.
+- **Provider error sanitization.** Known fragments of withheld endpoint URLs
+  and the explorer API key are removed from provider error responses before
+  analysis and recording: transport failure text, non-2xx bodies (JSON string
+  values, or plain text when not JSON), and the top-level `error` member of a
+  JSON-RPC response. JSON structure, ids and numeric codes are kept. Successful
+  responses, including results that contain fields named `error`, are passed
+  through unchanged. Malformed percent encoding in a configured URL no longer
+  throws.
 - After `record`, the CLI suggests the replay command in the form it was started
   with (`npm run -s txstory --` from a clone).
 
+**API and output changes**
+
+- New required fields: `RpcCall.unanswered` (library), and in the
+  reconstruction report (`replay --json`, browser) `withoutUserAbis`,
+  `userAbisChangedOutput` (both `null` when no user ABIs are supplied) and
+  `differsOnlyByUserAbis`. Existing fields are unchanged.
+- New optional fields: `EngineConfig.trustedEndpointUrls` and
+  `ChainEndpoints.recorded`.
+- `replay --abi` exits 0 in the additional case above, where it exited 1.
+- Not-found and pending messages carry the answering endpoint and, when it
+  applies, the "Not conclusive" note.
+- Custom endpoints that are not trusted appear in withheld form in new
+  recordings and in `txstory networks`. Recordings made with the built-in
+  public endpoints, and the shipped synthetic and devnet recordings, keep their
+  URLs, request keys and output digests. Recordings from earlier versions are
+  replayed with the URLs they contain.
+
 **Documentation**
 
-- README command blocks use `npm run -s txstory -- ...`, which works from a
-  clone without a build; the HTTP API example uses a shipped example and no
+- README command blocks use `npm run -s txstory -- ...`, which works after
+  `npm ci` without a build; the HTTP API example uses a shipped example and no
   longer requires `jq`; endpoint fallback and pre-Byzantium transactions are
   documented. `docs/cli.md` leads with the same command.
-- `docs/trial.md`: a three-task developer trial with observable success and
-  failure.
+- `docs/trial.md`: three developer tasks with observable success and failure.
 - The bug report template asks for the command, expected and observed
   behaviour, versions, a safe reproduction and provider details.
+- `docs/configuration.md`, "Provider URLs in shareable output", states the URL
+  rule and its limits.
+
+**Remaining limits on sharing recordings**
+
+Check a recording before sharing it. Successful and malformed 2xx provider
+responses are stored as received and are not inspected; a secret shorter than
+the scrubbing thresholds can survive in echoed error text; explorer pagination
+parameters are kept; and recordings made by earlier versions keep the URLs they
+were written with, which may include credentials. This release is not the
+result of a complete security audit.
 
 ## 0.4.0: released 2026-11-27
 
