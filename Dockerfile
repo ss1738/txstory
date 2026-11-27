@@ -4,7 +4,7 @@
 # Nothing here publishes or deploys; see DEPLOYMENT.md.
 # The build context is an allowlist (.dockerignore): no study data, tests or .env files.
 
-FROM node:22.23.5-alpine3.23 AS build
+FROM node:26.13.1-alpine3.23 AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
@@ -12,7 +12,7 @@ COPY tsconfig.json tsconfig.server.json vite.config.ts ./
 COPY src ./src
 RUN npm run build
 
-FROM node:22.23.5-alpine3.23 AS runtime
+FROM node:26.13.1-alpine3.23 AS runtime
 ENV NODE_ENV=production \
     TXSTORY_HOST=0.0.0.0 \
     TXSTORY_PORT=8787 \
