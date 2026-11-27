@@ -53,6 +53,13 @@ export interface ReconstructionReport {
   result: { kind: StoryResult['kind']; message: string | null };
   check: ReplayCheck;
   verdict: ReconstructionVerdict;
+  /**
+   * True when the verdict is `differs` only because this rebuild used ABIs the
+   * recording was made without: the evidence digest is the same and only the
+   * output (decodings and interpretations) changed. Callers treat this as the
+   * expected result of supplying ABIs, not as a reproducibility failure.
+   */
+  differsOnlyByUserAbis: boolean;
   /** Requests the analysis made that the recording has no answer for (each is shown as missing data). */
   missing: Array<{ kind: 'rpc' | 'explorer'; provider: string; method: string }>;
   /** Recorded exchanges the analysis never requested (older engines asked for different things). */
@@ -106,6 +113,7 @@ export async function reconstruct(rec: Recording, base: EngineConfig, opts: Omit
     result: { kind: result.kind, message: result.kind === 'ok' ? null : result.message },
     check,
     verdict,
+    differsOnlyByUserAbis: verdict === 'differs' && (opts.userAbi?.labels.length ?? 0) > 0 && check.sameEvidence === true && check.sameOutput === false,
     missing: dedupe(missing),
     unusedExchanges: Math.max(0, ex.length - seen.size),
     differences,
@@ -132,9 +140,11 @@ function explain(r: ReconstructionReport): string[] {
       if (r.check.sameEvidence === false) {
         notes.push('The provider evidence differs from what was recorded. The analysis now reads a different set of responses: either the recording was edited, or this engine requests different data than the one that made it.');
       }
-      if (r.check.sameOutput === false && r.userAbis.length > 0 && r.check.sameEvidence !== false) {
+      if (r.differsOnlyByUserAbis) {
         notes.push(`The output differs because this rebuild decodes with ABIs you supplied (${r.userAbis.map((a) => a.label).join(', ')}), which the original analysis did not have. The recorded evidence is the same; decodings and the interpretations built on them can change.`);
-      } else if (r.check.sameOutput === false) {
+        break;
+      }
+      if (r.check.sameOutput === false) {
         notes.push(versionChanged
           ? `The output differs. The recording was made by TxStory ${r.recording.engineVersion} and rebuilt with ${r.engine.version}, so a change in analysis code is the first thing to check.`
           : 'The output differs although the engine version is the same. That points to an edited recording or a non-deterministic step in the analysis; please report it with the recording attached if it is shareable.');

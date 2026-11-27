@@ -204,6 +204,10 @@ test.describe('decode with your ABI (static site)', () => {
     await expect(page.getByTestId('abi-control')).toContainText('Decoded with your ABIs (not part of the recording): Demo.abi.json');
     await expect(page.locator('.interps')).toContainText('InsufficientBalance(available="1000000000000000000", required="5")');
     await expect(panel).toContainText('decodes with ABIs you supplied (Demo.abi.json)');
+    // A difference caused only by the supplied ABI is shown as such, not as a failed reproduction.
+    await expect(panel).toContainText('Decoded with your ABIs');
+    await expect(panel).not.toContainText('Differs from the recording');
+    await expect(panel).not.toContainText('does not embed its original story');
     expect(requests.filter((r) => new URL(r.url()).origin !== new URL(baseURL!).origin || r.method() !== 'GET')).toEqual([]);
     await page.getByRole('button', { name: 'Rebuild without them' }).click();
     await expect(panel).toContainText('Reproduced');

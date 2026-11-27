@@ -151,7 +151,7 @@ interface AbiControl { busy: boolean; error: string | null; onFiles: (files: Fil
 
 export function ReconstructionPanel({ report, sourceLabel, onReset, abi }: { report: ReconstructionReport; sourceLabel: string; onReset?: (() => void) | undefined; abi?: AbiControl }) {
   const r = report.recording;
-  const v = VERDICT[report.verdict];
+  const v = report.differsOnlyByUserAbis ? { tone: 'info' as const, label: 'Decoded with your ABIs' } : VERDICT[report.verdict];
   const yesNo = (b: boolean | null) => (b === null ? 'not stored' : b ? 'same' : 'different');
   return (
     <section className="panel reconstruction" aria-labelledby="recon-h" data-testid="reconstruction">

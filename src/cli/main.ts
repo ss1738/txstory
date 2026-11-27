@@ -40,6 +40,12 @@ class CliError extends Error {
 
 interface Io { out: (s: string) => void; err: (s: string) => void; env: Record<string, string | undefined> }
 
+/**
+ * The command to show in suggestions. From a clone, `npm run -s txstory --`
+ * works without a build or `npm link`; npm sets npm_lifecycle_event then.
+ */
+const selfCommand = (io: Io) => (io.env.npm_lifecycle_event === 'txstory' ? 'npm run -s txstory --' : 'txstory');
+
 // ---------------------------------------------------------------- argument parsing
 
 type Flags = Record<string, string[]>;
@@ -206,6 +212,10 @@ function renderDecode(r: DecodeResult & { panic?: string }): string {
 
 const HELP = `txstory ${ENGINE_VERSION}: explain EVM transactions with evidence
 
+From a clone, run commands as \`npm run -s txstory -- <command>\` (no build needed),
+or \`node dist/node/cli/main.js <command>\` after \`npm run build\`. \`txstory\` below
+is short for either; \`npm link\` makes it a real command.
+
 Usage:
   txstory explain <network> <hash|explorer-link> [options]   analyse live
   txstory explain <explorer-link>                            network from the link
@@ -275,7 +285,7 @@ async function cmdRecord(pos: string[], f: Flags, io: Io): Promise<number> {
   await writeRecording(out, recording);
   const summary = { file: out, exchanges: Object.keys(recording.exchanges).length, kind: result.kind, storySha256: recording.output?.storySha256 ?? null };
   if (has(f, 'json')) json(io, 'record', { ok: result.kind === 'ok', ...summary });
-  else io.out(`Recorded ${summary.exchanges} provider exchange(s) to ${out} (${result.kind}). Replay offline with: txstory replay ${out}`);
+  else io.out(`Recorded ${summary.exchanges} provider exchange(s) to ${out} (${result.kind}). Replay offline with: ${selfCommand(io)} replay ${out}`);
   if (result.kind !== 'ok') io.err(`${result.kind}: ${result.message}`);
   return result.kind === 'ok' ? EXIT.ok : resultExit(result, false);
 }
@@ -288,7 +298,8 @@ async function cmdReplay(pos: string[], f: Flags, io: Io): Promise<number> {
   const userAbi = loadAbis(f);
   const { report, result } = await reconstruct(rec, engineConfig(f, io), userAbi ? { userAbi } : {});
   const check = report.check;
-  const differs = report.verdict === 'differs';
+  // A difference caused only by --abi is the requested result, not a reproducibility failure.
+  const differs = report.verdict === 'differs' && !report.differsOnlyByUserAbis;
   if (has(f, 'json')) {
     json(io, 'replay', { ok: result.kind === 'ok' && !differs, check, report, ...(result.kind === 'ok' ? { story: result.story } : { error: { code: result.kind, message: result.message } }) });
   } else {

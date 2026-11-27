@@ -108,6 +108,9 @@ describe('reconstruction report', () => {
     expect(report.check.sameOutput).toBe(false);
     expect(report.notes.join(' ')).toMatch(/decodes with ABIs you supplied \(Demo\.abi\.json\)/);
     expect(report.notes.join(' ')).not.toMatch(/edited recording/);
+    expect(report.differsOnlyByUserAbis).toBe(true);
+    // The cause is known, so the generic "cannot list differences" advice is not shown.
+    expect(report.notes.join(' ')).not.toMatch(/does not embed its original story/);
     if (result.kind !== 'ok') throw new Error('expected a story');
     expect(result.story.revert?.summary).toBe('InsufficientBalance(available="1000000000000000000", required="5")');
   });
