@@ -140,6 +140,44 @@ describe('RPC client', () => {
     expect(seen).toHaveLength(1);
     expect(r.error).toMatch(/execution reverted/);
   });
+  it('falls back when a node reports its own limits, such as pruned history (live case: PublicNode, block 46147)', async () => {
+    const seen: string[] = [];
+    const pruned = { code: -32000, message: 'pruned history unavailable: requested 46147, earliest available 15500000' };
+    const t: Transport = { send: async (req) => { seen.push(req.url); return req.url.includes('a.example') ? resp({ text: JSON.stringify({ jsonrpc: '2.0', id: 1, error: pruned }) }) : ok({ number: '0xb443' }); } };
+    const r = await new RpcClient(t, [{ url: 'https://a.example', provider: 'A' }, { url: 'https://b.example', provider: 'B' }]).call('eth_getBlockByNumber', ['0xb443', false]);
+    expect(seen).toEqual(['https://a.example', 'https://b.example']);
+    expect(r.error).toBeUndefined();
+    expect(r.endpoint.provider).toBe('B');
+    expect(r.failedAttempts).toEqual(['A: RPC error: pruned history unavailable: requested 46147, earliest available 15500000']);
+  });
+  it('falls back on "method not found" and reports the last node error when every node is limited', async () => {
+    const t: Transport = { send: async () => resp({ text: JSON.stringify({ jsonrpc: '2.0', id: 1, error: { code: -32601, message: 'the method does not exist' } }) }) };
+    const r = await new RpcClient(t, [{ url: 'https://a.example', provider: 'A' }, { url: 'https://b.example', provider: 'B' }]).call('eth_getBlockByNumber', ['0x1', false]);
+    expect(r.endpoint.provider).toBe('B');
+    expect(r.error).toMatch(/method does not exist/);
+    expect(r.failedAttempts).toHaveLength(1);
+  });
+  it('keeps request errors on the first node, even when the revert reason mentions a node limit', async () => {
+    for (const error of [
+      { code: 3, message: 'execution reverted: pruned history unavailable' },
+      { code: -32602, message: 'invalid argument 0: hex string has odd length' },
+    ]) {
+      const seen: string[] = [];
+      const t: Transport = { send: async (req) => { seen.push(req.url); return resp({ text: JSON.stringify({ jsonrpc: '2.0', id: 1, error }) }); } };
+      const r = await new RpcClient(t, [{ url: 'https://a.example', provider: 'A' }, { url: 'https://b.example', provider: 'B' }]).call('eth_call', []);
+      expect(seen, error.message).toEqual(['https://a.example']);
+      expect(r.error).toContain(error.message);
+    }
+  });
+  it('a node limit followed by a server error stays an error and keeps both reasons', async () => {
+    const t: Transport = { send: async (req) => (req.url.includes('a.example')
+      ? resp({ text: JSON.stringify({ jsonrpc: '2.0', id: 1, error: { code: -32000, message: 'pruned history unavailable' } }) })
+      : resp({ ok: false, httpStatus: 503 })) };
+    const r = await new RpcClient(t, [{ url: 'https://a.example', provider: 'A' }, { url: 'https://b.example', provider: 'B' }]).call('eth_getBlockByNumber', ['0x1', false]);
+    expect(r.value).toBeNull();
+    expect(r.error).toBe('HTTP 503');
+    expect(r.failedAttempts).toEqual(['A: RPC error: pruned history unavailable']);
+  });
   it('prefers a well-formed null answer over later transport failures', async () => {
     const t: Transport = { send: async (req) => (req.url.includes('a.example') ? ok(null) : resp({ ok: false, httpStatus: 0, failure: 'network error' })) };
     const r = await new RpcClient(t, [{ url: 'https://a.example', provider: 'A' }, { url: 'https://b.example', provider: 'B' }]).call('eth_getTransactionReceipt', ['0x'], { retryOnNull: true });
@@ -198,5 +236,29 @@ describe('Blockscout pagination', () => {
     expect(r.explorer.available).toBe(false);
     expect(r.explorer.reason).toMatch(/403/);
     expect(r.sources[0]!.url).not.toContain('KEY123');
+  });
+});
+
+describe('not-found with endpoints that could not answer', () => {
+  it('reports a null answer as inconclusive while another configured endpoint could not check', async () => {
+    const { assembleStory } = await import('../../src/engine/analyze.js');
+    const { engineConfigFromEnv } = await import('../../src/engine/config.js');
+    const config = engineConfigFromEnv({ TXSTORY_RPC_ETHEREUM: 'https://a.example,https://b.example', TXSTORY_EXPLORER_ETHEREUM: 'off' });
+    const t: Transport = { send: async (req) => resp({ text: JSON.stringify(req.url.includes('a.example')
+      ? { jsonrpc: '2.0', id: 1, result: null }
+      : { jsonrpc: '2.0', id: 1, error: { code: -32000, message: 'pruned history unavailable' } }) }) };
+    const r = await assembleStory('ethereum', '0x' + 'ab'.repeat(32), t, config);
+    if (r.kind !== 'not-found') throw new Error(r.kind);
+    expect(r.message).toMatch(/was found on Ethereum by custom RPC 1\./);
+    expect(r.message).toMatch(/Not conclusive: 1 other configured endpoint\(s\) could not answer \(custom RPC 2: RPC error: pruned history unavailable\)/);
+  });
+  it('states a plain not-found when every endpoint answered', async () => {
+    const { assembleStory } = await import('../../src/engine/analyze.js');
+    const { engineConfigFromEnv } = await import('../../src/engine/config.js');
+    const config = engineConfigFromEnv({ TXSTORY_RPC_ETHEREUM: 'https://a.example,https://b.example', TXSTORY_EXPLORER_ETHEREUM: 'off' });
+    const t: Transport = { send: async () => resp({ text: JSON.stringify({ jsonrpc: '2.0', id: 1, result: null }) }) };
+    const r = await assembleStory('ethereum', '0x' + 'ab'.repeat(32), t, config);
+    if (r.kind !== 'not-found') throw new Error(r.kind);
+    expect(r.message).not.toMatch(/Not conclusive/);
   });
 });

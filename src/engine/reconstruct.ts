@@ -14,7 +14,7 @@ import { STORY_SCHEMA_VERSION, type Story } from '../core/types.js';
 import { compareStories, type Comparison } from '../core/compare.js';
 import type { StoryResult } from './analyze.js';
 import { ENGINE_VERSION } from './defaults.js';
-import { checkReplay, replayRecording, type Recording, type ReplayCheck, type ReplayOptions } from './recording.js';
+import { checkReplay, replayRecording, storyDigest, type Recording, type ReplayCheck, type ReplayOptions } from './recording.js';
 import { fixtureRequestKey, legacyFixtureKeyV1, FIXTURE_SCHEMA_V1, type TransportRequest } from './transport.js';
 import type { EngineConfig } from './defaults.js';
 
@@ -53,6 +53,25 @@ export interface ReconstructionReport {
   result: { kind: StoryResult['kind']; message: string | null };
   check: ReplayCheck;
   verdict: ReconstructionVerdict;
+  /**
+   * With user ABIs only: the same recording rebuilt WITHOUT them, compared with
+   * the stored digests. This answers "does the original output still
+   * reproduce?" independently of the reinterpretation. null without user ABIs.
+   */
+  withoutUserAbis: { sameEvidence: boolean | null; sameOutput: boolean | null; replayDigest: string | null } | null;
+  /**
+   * With user ABIs only: whether they changed any decoding or interpretation.
+   * Listing a supplied ABI among the output's ABI sources does not count, so
+   * an ABI that matched nothing gives false. null without user ABIs.
+   */
+  userAbisChangedOutput: boolean | null;
+  /**
+   * True only when the verdict is `differs`, the evidence is the same, and the
+   * rebuild WITHOUT user ABIs reproduces both stored digests. The two rebuilds
+   * differ only in the supplied ABIs, so the difference is the requested
+   * reinterpretation, not a reproducibility failure. Nothing else is excused.
+   */
+  differsOnlyByUserAbis: boolean;
   /** Requests the analysis made that the recording has no answer for (each is shown as missing data). */
   missing: Array<{ kind: 'rpc' | 'explorer'; provider: string; method: string }>;
   /** Recorded exchanges the analysis never requested (older engines asked for different things). */
@@ -75,6 +94,19 @@ export async function reconstruct(rec: Recording, base: EngineConfig, opts: Omit
   };
   const result = await replayRecording(rec, base, { ...opts, onRequest });
   const check = checkReplay(rec, result);
+  // Reproduction of the original output is judged without the user's ABIs.
+  const hasUserAbis = (opts.userAbi?.labels.length ?? 0) > 0;
+  let withoutUserAbis: ReconstructionReport['withoutUserAbis'] = null;
+  let userAbisChangedOutput: boolean | null = null;
+  if (hasUserAbis) {
+    const { userAbi: _omit, ...plainOpts } = opts;
+    const plainResult = await replayRecording(rec, base, plainOpts);
+    const plain = checkReplay(rec, plainResult);
+    withoutUserAbis = { sameEvidence: plain.sameEvidence, sameOutput: plain.sameOutput, replayDigest: plain.replayDigest };
+    userAbisChangedOutput = result.kind === 'ok' && plainResult.kind === 'ok'
+      ? storyDigest(withoutUserAbiSources(result.story)) !== storyDigest(withoutUserAbiSources(plainResult.story))
+      : result.kind !== plainResult.kind;
+  }
   const ex = Object.values(rec.exchanges);
   const verdict: ReconstructionVerdict =
     result.kind !== 'ok' ? 'no-story'
@@ -106,6 +138,10 @@ export async function reconstruct(rec: Recording, base: EngineConfig, opts: Omit
     result: { kind: result.kind, message: result.kind === 'ok' ? null : result.message },
     check,
     verdict,
+    withoutUserAbis,
+    userAbisChangedOutput,
+    differsOnlyByUserAbis: verdict === 'differs' && check.sameEvidence === true
+      && withoutUserAbis?.sameEvidence === true && withoutUserAbis.sameOutput === true,
     missing: dedupe(missing),
     unusedExchanges: Math.max(0, ex.length - seen.size),
     differences,
@@ -113,6 +149,11 @@ export async function reconstruct(rec: Recording, base: EngineConfig, opts: Omit
   };
   report.notes = explain(report);
   return { report, result };
+}
+
+/** A story without the user-ABI entries in its ABI source list, to tell real decoding changes from that listing. */
+function withoutUserAbiSources(story: Story): Story {
+  return { ...story, abiDecoding: { ...story.abiDecoding, libraries: story.abiDecoding.libraries.filter((l) => l.source !== 'user') } };
 }
 
 function dedupe(list: ReconstructionReport['missing']): ReconstructionReport['missing'] {
@@ -132,9 +173,17 @@ function explain(r: ReconstructionReport): string[] {
       if (r.check.sameEvidence === false) {
         notes.push('The provider evidence differs from what was recorded. The analysis now reads a different set of responses: either the recording was edited, or this engine requests different data than the one that made it.');
       }
-      if (r.check.sameOutput === false && r.userAbis.length > 0 && r.check.sameEvidence !== false) {
-        notes.push(`The output differs because this rebuild decodes with ABIs you supplied (${r.userAbis.map((a) => a.label).join(', ')}), which the original analysis did not have. The recorded evidence is the same; decodings and the interpretations built on them can change.`);
-      } else if (r.check.sameOutput === false) {
+      if (r.differsOnlyByUserAbis) {
+        const names = r.userAbis.map((a) => a.label).join(', ');
+        notes.push(r.userAbisChangedOutput
+          ? `The output differs because this rebuild decodes with ABIs you supplied (${names}), which the original analysis did not have. The recorded evidence is the same, and without your ABIs the stored output is reproduced exactly; decodings and the interpretations built on them changed.`
+          : `The ABIs you supplied (${names}) did not change any decoding. The output differs only because it lists them among the ABI sources consulted. Without them the stored output is reproduced exactly.`);
+        break;
+      }
+      if (r.withoutUserAbis && r.withoutUserAbis.sameOutput !== true) {
+        notes.push('Without your ABIs the rebuilt output also differs from the recording, so the difference is not caused by your ABIs.');
+      }
+      if (r.check.sameOutput === false) {
         notes.push(versionChanged
           ? `The output differs. The recording was made by TxStory ${r.recording.engineVersion} and rebuilt with ${r.engine.version}, so a change in analysis code is the first thing to check.`
           : 'The output differs although the engine version is the same. That points to an edited recording or a non-deterministic step in the analysis; please report it with the recording attached if it is shareable.');

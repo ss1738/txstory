@@ -46,9 +46,65 @@ All settings are optional environment variables. See [.env.example](../.env.exam
   address spraying cannot reset limits that are already being tracked.
 - **Topology examples:** see `DEPLOYMENT.md`.
 
-Credentials can live in RPC URLs. Every URL is passed through `redactUrl` before it
-is stored in a source record, an export or a log line. API keys stay on the server
-and never reach the browser.
+Credentials can live in RPC URLs. API keys stay on the server and never reach
+the browser.
+
+### Provider URLs in shareable output
+
+Stories, recordings, evidence exports, HTTP API responses, CLI output and the
+browser show a configured endpoint's URL only when the endpoint is trusted.
+Trust is decided for the whole endpoint URL, never for a host alone:
+
+- an **exact** built-in public endpoint (the defaults listed in the README):
+  same scheme, host, port and path, with no userinfo, query or fragment;
+- a **bare loopback origin**: `http(s)://localhost`, `127.0.0.1` or `[::1]`
+  with an optional port and nothing else (no path, userinfo or query);
+- an exact URL listed in `EngineConfig.trustedEndpointUrls` by library code
+  (the synthetic fixture generator lists its `.invalid` endpoints this way).
+
+Everything else is **withheld**, including a public host with an extra path or
+query, and `localhost` or `.invalid` URLs with a path, query or userinfo. This
+covers `TXSTORY_RPC_<NETWORK>`, `--rpc`, `TXSTORY_EXPLORER_<NETWORK>`,
+`--explorer` and chain files. A withheld RPC endpoint appears as
+`https://rpc-<n>.withheld.invalid/` (its position in the endpoint list) and a
+withheld explorer as `https://explorer.withheld.invalid` followed by the path
+and query TxStory generated for the request (the explorer's own `apikey`
+parameter becomes `REDACTED`). The provider label (for example
+`custom RPC 1`) is kept. These forms are also the request identifiers in new
+recordings: distinct requests stay distinct, and the recordings rebuild offline
+without the real URLs. Endpoints read back from a recording are shown as they
+were stored.
+
+Omitted on purpose: the real host, path and query of withheld endpoints. A
+reader of a shared recording learns which position and label answered each
+request, not which provider or account it was.
+
+Provider error text can echo a URL or key. Before an error response is
+analysed or recorded, fragments of withheld endpoint URLs and the explorer API
+key are replaced with `REDACTED`: userinfo (always), path segments, query
+values and host labels other than the last two, when they have at least 6
+characters including a digit or at least 16 characters. Which responses count
+as errors follows how the analysis reads them:
+
+- a transport failure: its failure text;
+- a non-2xx response: string values of a JSON body (keys, numbers and structure
+  are kept), or the whole body as text when it is not valid JSON;
+- a 2xx RPC response whose body has a top-level `error` member (a JSON-RPC
+  error): only string values inside `error`; `jsonrpc`, `id` and numeric codes
+  are kept.
+
+Every other response is passed through byte for byte, including successful
+results that contain fields named `error`, successful explorer responses, and
+malformed 2xx bodies (which the analysis reports as invalid JSON). A body that
+is changed gets a new digest, so recordings and their offline replays agree.
+
+Limits: a secret shorter than those thresholds can survive in echoed error
+text; successful response bodies are recorded as received; explorer pagination
+parameters come from explorer responses and are kept; and nothing makes an
+arbitrary provider response or a file you supply safe to share. Check a
+recording before sharing it. Recordings made by earlier versions keep the URLs
+they were written with, which may include credentials that the earlier
+redaction missed.
 
 ## Engine, CLI and analysis settings
 

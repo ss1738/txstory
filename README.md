@@ -89,10 +89,10 @@ Warnings:
 stored in the recording. The node's own state agrees with these balance
 changes; `tests/unit/devnet.test.ts` checks that against `cast balance`.
 
-`npm run -s txstory -- <command>` is the CLI from source. After `npm run build`,
-`node dist/node/cli/main.js <command>` runs the compiled CLI, and `npm link`
-puts a `txstory` command on your PATH if you want one. The examples below write
-`txstory` for short.
+`npm run -s txstory -- <command>` is the CLI from source; it needs no build.
+After `npm run build`, `node dist/node/cli/main.js <command>` runs the compiled
+CLI, and `npm link` puts a `txstory` command on your PATH if you want one. The
+command blocks below use the source form so they work as copied.
 
 ## Kinds of data
 
@@ -111,13 +111,16 @@ repository, because their redistribution terms are unresolved (see
 
 ## Recordings: capture, share, rebuild
 
-A recording holds every provider response one analysis used, with credentials
-removed from URLs, plus digests of the evidence and of the result.
+A recording holds every provider response one analysis used, plus digests of
+the evidence and of the result. Endpoints you configure are withheld from it
+(see [Provider URLs in shareable output](docs/configuration.md#provider-urls-in-shareable-output));
+check a recording before sharing it, because provider responses are stored as
+received.
 
 ```bash
-txstory record ethereum 0x<hash> -o tx.json     # live analysis, saved
-txstory replay tx.json                          # rebuild offline on any machine
-txstory replay tx.json --json                   # the same, with a machine-readable report
+npm run -s txstory -- record ethereum 0x<hash> -o tx.json   # live analysis, saved
+npm run -s txstory -- replay tx.json                        # rebuild offline on any machine
+npm run -s txstory -- replay tx.json --json                 # the same, with a machine-readable report
 ```
 
 The browser does the same: **Open recording** in the web UI (or on the static
@@ -132,7 +135,16 @@ and reports:
   (`record --embed-story`).
 
 "Decode with ABI files" rebuilds the same recording with contract ABIs you
-supply, like `txstory replay tx.json --abi MyContract.json`. The report then says
+supply, like `npm run -s txstory -- replay tx.json --abi MyContract.json`. Try it with
+the shipped devnet recording of a custom error:
+
+```bash
+npm run -s txstory -- replay fixtures/devnet/anvil-0x27dbc58bd2861be2ea7264fd2d03aa97510ebc7ff3e00ab59a0bb114cbbe4aab.json --abi fixtures/devnet/Demo.abi.json
+```
+
+Without the ABI the revert is `unknown error selector 0xcf479181`; with it,
+`InsufficientBalance(available="1000000000000000000", required="5")`. The
+evidence is unchanged, so this exits 0. The report then says
 the output changed because of those ABIs, not because the evidence did.
 
 The file is not uploaded. What rebuilding does **not** do: it does not
@@ -172,11 +184,11 @@ tag and served by Cloudflare Workers Static Assets with the configuration in
 **CLI** ([docs/cli.md](docs/cli.md)):
 
 ```bash
-txstory explain ethereum 0x<hash>
-txstory explain https://eth.blockscout.com/tx/0x… --json --strict
-txstory explain ethereum 0x… --abi MyContract.json --rpc http://127.0.0.1:8545
-txstory compare before.json after.json
-txstory decode revert --data 0x4e487b710000000000000000000000000000000000000000000000000000000000000011
+npm run -s txstory -- explain ethereum 0x<hash>
+npm run -s txstory -- explain https://eth.blockscout.com/tx/0x<hash> --json --strict
+npm run -s txstory -- explain ethereum 0x<hash> --abi MyContract.json --rpc http://127.0.0.1:8545
+npm run -s txstory -- compare before.json after.json
+npm run -s txstory -- decode revert --data 0x4e487b710000000000000000000000000000000000000000000000000000000000000011
 ```
 
 The CLI keeps its output scriptable:
@@ -185,14 +197,23 @@ The CLI keeps its output scriptable:
 - errors go to stderr;
 - exit codes are stable (`0` ok, `1` incomplete or different, `2` usage,
   `3` not found or pending, `4` providers down, `5` bad input file);
-- URLs are always redacted.
+- configured provider URLs are withheld; only exact built-in public endpoints
+  and bare loopback origins are printed.
 
 **HTTP API** ([docs/api.md](docs/api.md); contract at `GET /api/openapi.json`):
 
+With `TXSTORY_MODE=recorded npm start` running, these work offline on a
+shipped synthetic example (with a live server, use any mainnet hash):
+
 ```bash
-curl -s "http://127.0.0.1:8787/api/story/ethereum/0x…?stage=full" | jq '.story.ledger'
-curl -s "http://127.0.0.1:8787/api/recording/ethereum/0x…" > tx.recording.json
+curl -s "http://127.0.0.1:8787/api/story/ethereum/0xefb65ab1ab71b94063c0ee8e8c7bdde47b808c19f4e653ed931e3006f4983112?stage=full" -o story.json
+curl -s "http://127.0.0.1:8787/api/recording/ethereum/0xefb65ab1ab71b94063c0ee8e8c7bdde47b808c19f4e653ed931e3006f4983112" -o tx.recording.json
+npm run -s txstory -- replay tx.recording.json
 ```
+
+`story.json` holds `{"ok": true, "story": {...}}`; the exact balance changes are
+in `story.ledger` (for example `jq '.story.ledger' story.json`, if you have
+`jq`).
 
 **Library** ([docs/engine.md](docs/engine.md), runnable example in
 [examples/library/explain.ts](examples/library/explain.ts): `npx tsx examples/library/explain.ts`):
@@ -222,7 +243,14 @@ so for anything beyond trying it out, point TxStory at a node you control.
 What each provider is needed for:
 
 - **A JSON-RPC endpoint is required.** Configure your own with
-  `TXSTORY_RPC_<NETWORK>=url1,url2` or `--rpc`.
+  `TXSTORY_RPC_<NETWORK>=url1,url2` or `--rpc`. Endpoints are tried in order:
+  TxStory moves to the next one on network errors, HTTP 403/429/5xx, and
+  JSON-RPC errors that describe the node's own limits (pruned history, an
+  unsupported method, rate limits). Errors about the request itself, such as a
+  reverted `eth_call`, are not retried. Public nodes differ in how much history
+  they keep; in one check on 2026-11-27 PublicNode answered a block request for
+  block 46147 with "pruned history unavailable". Exit code 4 means no
+  configured endpoint could answer.
 - **Call traces need `debug_traceTransaction` with the callTracer.** Self-hosted
   Geth, Reth, Erigon, Nethermind and Anvil offer it. Among the defaults, in a
   read-only check on 2026-11-26, PublicNode and Flashbots refused it and dRPC
@@ -261,6 +289,9 @@ the runnable example `npx tsx examples/decoder/split.ts` and see
   explorer if it answers, and is otherwise marked unavailable.
 - **Ordering.** The position of internal value transfers relative to token events
   is not known, and is not invented.
+- **Pre-Byzantium transactions** (Ethereum blocks before 4,370,000, October
+  2017) are not supported: their receipts have no status field, and TxStory
+  reports `unsupported` (exit 3) instead of guessing the outcome.
 - **Pending transactions** are reported, not explained. Very large transactions
   can exceed explorer page caps and are marked partial.
 - **Older recordings (schema v1/v2)** did not request traces, and some predate
@@ -282,6 +313,7 @@ the runnable example `npx tsx examples/decoder/split.ts` and see
 - [Extending](docs/extending.md): decoders, networks, providers
 - [Self-hosting](docs/self-hosting.md), including the private-pilot configuration in [DEPLOYMENT.md](DEPLOYMENT.md)
 - [Configuration reference](docs/configuration.md)
+- [Developer trial](docs/trial.md): three tasks with observable success and failure
 - [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md) · [Releases](RELEASE.md)
 - [Data provenance](DATA_PROVENANCE.md) · [Third-party notices](THIRD_PARTY_NOTICES.md) · [Verification record](VERIFICATION.md)
 

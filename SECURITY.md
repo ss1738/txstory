@@ -43,7 +43,7 @@ These are already in place:
 - strict CSP;
 - sanitisation of untrusted display strings;
 - bounded requests and decoding;
-- redaction of URLs;
+- withholding of provider URLs and scrubbing of provider error text;
 - trust of nothing forwarded by default (`TXSTORY_TRUST_PROXY`);
 - a non-root container image;
 - secret scanning in pre-commit and CI.

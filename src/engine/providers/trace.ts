@@ -18,7 +18,7 @@ export interface TraceFetch {
 
 const UNSUPPORTED = /not (available|supported|whitelisted|allowed|found)|does not exist|method not found|unsupported|disabled|unknown method|not enabled|-32601/i;
 
-export async function fetchCallTrace(transport: Transport, endpoints: RpcEndpoint[], hash: string, timeoutMs: number): Promise<TraceFetch> {
+export async function fetchCallTrace(transport: Transport, endpoints: RpcEndpoint[], hash: string, timeoutMs: number, shareable: (url: string) => string = redactUrl): Promise<TraceFetch> {
   const sources: SourceRecord[] = [];
   const reasons: string[] = [];
   let n = 0;
@@ -41,7 +41,7 @@ export async function fetchCallTrace(transport: Transport, endpoints: RpcEndpoin
         status = 'ok'; raw = json.result;
       } else note = 'empty or invalid trace response';
     }
-    sources.push({ id, kind: 'rpc', provider: ep.provider, url: redactUrl(ep.url), method: 'debug_traceTransaction (callTracer)', retrievedAt: res.retrievedAt, status, mode: res.mode, sha256: res.sha256, httpStatus: res.httpStatus, ...(note ? { note } : {}) });
+    sources.push({ id, kind: 'rpc', provider: ep.provider, url: shareable(ep.url), method: 'debug_traceTransaction (callTracer)', retrievedAt: res.retrievedAt, status, mode: res.mode, sha256: res.sha256, httpStatus: res.httpStatus, ...(note ? { note } : {}) });
     if (status === 'ok') return { status: 'complete', raw, provider: ep.provider, sources, ...(reasons.length ? { note: `Skipped: ${reasons.join('; ')}` } : {}) };
     reasons.push(`${ep.provider}: ${note}`);
   }

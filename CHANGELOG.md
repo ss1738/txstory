@@ -4,6 +4,58 @@ Version numbers follow semantic versioning in spirit. During 0.x, any minor
 version may change the library surface. Serialized formats are versioned
 independently (see docs/formats.md).
 
+## Unreleased
+
+**Fixed**
+
+- **RPC fallback on node limits.** A JSON-RPC error that describes the
+  answering node (codes -32601 and -32005, "pruned history", Geth's "does not
+  exist/is not available") now moves on to the next configured endpoint instead
+  of ending the analysis. Errors about
+  the request itself, such as a reverted `eth_call`, still stop immediately.
+  Found when PublicNode answered a block request with "pruned history
+  unavailable" while other default endpoints were configured.
+- **`replay --abi` no longer reports failure for the result it was asked for,
+  and never excuses another difference.** With user ABIs, the recording is also
+  rebuilt without them; the report adds `withoutUserAbis` (does the original
+  output still reproduce?) and `userAbisChangedOutput` (did the ABIs change any
+  decoding?). `differsOnlyByUserAbis` is true only when the evidence is the
+  same and the rebuild without ABIs reproduces both stored digests; then the
+  CLI exits 0 and the browser shows "Decoded with your ABIs". Changed evidence,
+  an already mismatching stored output, or a changed recorded stage still exit 1.
+- **Not-found and pending results say when they are inconclusive.** A null
+  answer from one endpoint is still reported, but the message now names the
+  endpoint and lists configured endpoints that could not answer.
+- **Credentials in shareable output.** A configured endpoint's URL is shown
+  only when the whole URL is trusted: an exact built-in public endpoint, a bare
+  loopback origin, or an exact URL in `EngineConfig.trustedEndpointUrls`. All
+  others, including a public host with an extra path or query and `localhost`
+  or `.invalid` URLs with userinfo, a path or a query, are withheld from
+  stories, recordings, evidence exports, API responses and CLI output
+  (`https://rpc-<n>.withheld.invalid/`). Explorer request paths are kept under
+  the placeholder so requests stay distinct. Known credential fragments are
+  removed from provider error responses before analysis and recording (transport
+  failures, non-2xx bodies, and top-level JSON-RPC `error` members only; string
+  values are scrubbed and JSON structure, ids and numeric codes are kept;
+  successful responses are never changed); malformed
+  percent encoding in a configured URL no longer throws. Previously short path
+  tokens, hostname tokens, unrecognized query parameters and secrets echoed in
+  provider errors could appear. Default, synthetic and devnet recordings are
+  unchanged.
+- After `record`, the CLI suggests the replay command in the form it was started
+  with (`npm run -s txstory --` from a clone).
+
+**Documentation**
+
+- README command blocks use `npm run -s txstory -- ...`, which works from a
+  clone without a build; the HTTP API example uses a shipped example and no
+  longer requires `jq`; endpoint fallback and pre-Byzantium transactions are
+  documented. `docs/cli.md` leads with the same command.
+- `docs/trial.md`: a three-task developer trial with observable success and
+  failure.
+- The bug report template asks for the command, expected and observed
+  behaviour, versions, a safe reproduction and provider details.
+
 ## 0.4.0: released 2026-11-27
 
 Developer-journey release: rebuild recordings in the browser, a static

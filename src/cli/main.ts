@@ -15,7 +15,7 @@ import { amountExact } from '../core/format.js';
 import { parseLookupInput } from '../core/lookupInput.js';
 import type { Story } from '../core/types.js';
 import { analyzeTransaction, type AssembleOptions, type StoryResult } from '../engine/analyze.js';
-import { ENGINE_VERSION, engineConfigFromEnv, loadChainFile, redactUrl, type EngineConfig } from '../engine/config.js';
+import { ENGINE_VERSION, engineConfigFromEnv, loadChainFile, shareableLooseUrl, shareableUrlMapper, type EngineConfig } from '../engine/config.js';
 import { recordAnalysis, replayRecording, validateRecording, type Recording } from '../engine/recording.js';
 import { reconstruct, type ReconstructionReport } from '../engine/reconstruct.js';
 import { readRecording, writeRecording } from '../engine/fixture-files.js';
@@ -39,6 +39,12 @@ class CliError extends Error {
 }
 
 interface Io { out: (s: string) => void; err: (s: string) => void; env: Record<string, string | undefined> }
+
+/**
+ * The command to show in suggestions. From a clone, `npm run -s txstory --`
+ * works without a build or `npm link`; npm sets npm_lifecycle_event then.
+ */
+const selfCommand = (io: Io) => (io.env.npm_lifecycle_event === 'txstory' ? 'npm run -s txstory --' : 'txstory');
 
 // ---------------------------------------------------------------- argument parsing
 
@@ -206,6 +212,10 @@ function renderDecode(r: DecodeResult & { panic?: string }): string {
 
 const HELP = `txstory ${ENGINE_VERSION}: explain EVM transactions with evidence
 
+From a clone, run commands as \`npm run -s txstory -- <command>\` (no build needed),
+or \`node dist/node/cli/main.js <command>\` after \`npm run build\`. \`txstory\` below
+is short for either; \`npm link\` makes it a real command.
+
 Usage:
   txstory explain <network> <hash|explorer-link> [options]   analyse live
   txstory explain <explorer-link>                            network from the link
@@ -275,7 +285,7 @@ async function cmdRecord(pos: string[], f: Flags, io: Io): Promise<number> {
   await writeRecording(out, recording);
   const summary = { file: out, exchanges: Object.keys(recording.exchanges).length, kind: result.kind, storySha256: recording.output?.storySha256 ?? null };
   if (has(f, 'json')) json(io, 'record', { ok: result.kind === 'ok', ...summary });
-  else io.out(`Recorded ${summary.exchanges} provider exchange(s) to ${out} (${result.kind}). Replay offline with: txstory replay ${out}`);
+  else io.out(`Recorded ${summary.exchanges} provider exchange(s) to ${out} (${result.kind}). Replay offline with: ${selfCommand(io)} replay ${out}`);
   if (result.kind !== 'ok') io.err(`${result.kind}: ${result.message}`);
   return result.kind === 'ok' ? EXIT.ok : resultExit(result, false);
 }
@@ -288,7 +298,8 @@ async function cmdReplay(pos: string[], f: Flags, io: Io): Promise<number> {
   const userAbi = loadAbis(f);
   const { report, result } = await reconstruct(rec, engineConfig(f, io), userAbi ? { userAbi } : {});
   const check = report.check;
-  const differs = report.verdict === 'differs';
+  // A difference caused only by --abi is the requested result, not a reproducibility failure.
+  const differs = report.verdict === 'differs' && !report.differsOnlyByUserAbis;
   if (has(f, 'json')) {
     json(io, 'replay', { ok: result.kind === 'ok' && !differs, check, report, ...(result.kind === 'ok' ? { story: result.story } : { error: { code: result.kind, message: result.message } }) });
   } else {
@@ -308,6 +319,7 @@ function renderReport(r: ReconstructionReport): string {
     `Origin: ${rec.origin} · recorded ${rec.recordedAt}${rec.description ? ` · ${rec.description}` : ''}`,
     `Same evidence: ${r.check.sameEvidence ?? 'unknown (no recorded output)'} · Same output: ${r.check.sameOutput ?? 'unknown (no recorded output)'} · Rebuilt by TxStory ${r.engine.version}`,
   ];
+  if (r.withoutUserAbis) lines.push(`Without your ABIs: same evidence ${r.withoutUserAbis.sameEvidence ?? 'unknown'} · same output ${r.withoutUserAbis.sameOutput ?? 'unknown'} · your ABIs ${r.userAbisChangedOutput ? 'changed' : 'did not change'} the output`);
   if (r.missing.length) lines.push(`Not in the recording (${r.missing.length}): ${r.missing.slice(0, 8).map((m) => `${m.provider} ${m.method}`).join('; ')}${r.missing.length > 8 ? '; …' : ''}`);
   if (r.differences) {
     lines.push(r.differences.summary);
@@ -380,7 +392,7 @@ async function cmdNetworks(_pos: string[], f: Flags, io: Io): Promise<number> {
   const config = engineConfig(f, io);
   const list = chainKeys().map((k) => {
     const c = getChain(k); const e = config.endpoints[k];
-    return { key: k, name: c.name, chainId: c.chainId, builtin: c.builtin, feeModel: c.feeModel, rpc: e?.rpcs.map((r) => redactUrl(r.url)) ?? [], explorerApi: e?.explorerApi ? redactUrl(e.explorerApi) : null, trace: config.trace };
+    return { key: k, name: c.name, chainId: c.chainId, builtin: c.builtin, feeModel: c.feeModel, rpc: e ? e.rpcs.map((r) => shareableUrlMapper(e, config.trustedEndpointUrls)(r.url)) : [], explorerApi: e?.explorerApi ? shareableUrlMapper(e, config.trustedEndpointUrls)(e.explorerApi) : null, trace: config.trace };
   });
   if (has(f, 'json')) json(io, 'networks', { ok: true, networks: list });
   else for (const n of list) io.out(`${n.key.padEnd(10)} ${String(n.chainId).padEnd(8)} ${n.name}${n.builtin ? '' : ' (custom)'}\n           rpc: ${n.rpc.join(', ') || '(none)'}\n           explorer: ${n.explorerApi ?? 'off'}`);
@@ -404,7 +416,7 @@ export async function main(argv: string[], io: Io): Promise<number> {
   } catch (e) {
     const err = e instanceof CliError ? e : new CliError('unavailable', e instanceof Error ? e.message : 'unexpected error');
     // Never echo URLs unredacted.
-    const message = err.message.replace(/https?:\/\/[^\s"')]+/g, (u) => redactUrl(u));
+    const message = err.message.replace(/https?:\/\/[^\s"')]+/g, (u) => shareableLooseUrl(u));
     if (jsonMode) io.out(JSON.stringify({ txstory: ENGINE_VERSION, ok: false, error: { code: err.code, message } }, null, 2));
     io.err(`txstory: ${message}`);
     return EXIT[err.code];

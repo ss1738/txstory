@@ -3,10 +3,13 @@
 The CLI uses the same engine as the web app and the API. From a clone:
 
 ```bash
-npm ci && npm run build
-node dist/node/cli/main.js help      # or, without building: npx tsx src/cli/main.ts help
-npm link                             # optional: puts `txstory` on your PATH (local only, nothing is published)
+npm ci
+npm run -s txstory -- help           # runs from source; no build needed
+npm run build && node dist/node/cli/main.js help   # the compiled CLI
+npm link                             # optional, after the build: puts `txstory` on your PATH (local only, nothing is published)
 ```
+
+The examples below write `txstory` for any of these forms.
 
 ## Conventions (stable)
 
@@ -15,14 +18,16 @@ npm link                             # optional: puts `txstory` on your PATH (lo
 - **`--json`.** Exactly one JSON document goes to stdout, errors included:
   `{"txstory": "<version>", "command", "ok", ...}`. Human text is for reading;
   parse JSON.
-- **Credentials.** Provider URLs are printed only in redacted form
-  (`/v2/REDACTED`, `apikey=REDACTED`).
+- **Credentials.** Configured provider URLs are withheld
+  (`https://rpc-1.withheld.invalid/`); only exact built-in public endpoints
+  and bare loopback origins are printed. See
+  [Provider URLs in shareable output](configuration.md#provider-urls-in-shareable-output).
 - **Exit codes:**
 
 | Code | Meaning |
 |---|---|
 | 0 | Success. Also: replay identical, compare identical, decode unique. |
-| 1 | Result produced but not clean: partial facts with `--strict`, a replay that differs, a comparison with differences, or a decode that is ambiguous or no match |
+| 1 | Result produced but not clean: partial facts with `--strict`, a replay that differs, a comparison with differences, or a decode that is ambiguous or no match. A replay with `--abi` exits 0 when the evidence is identical and the same recording rebuilt without the ABIs reproduces the stored output (`differsOnlyByUserAbis`); the report always states both results. |
 | 2 | Usage error |
 | 3 | Transaction not found, pending, or unsupported |
 | 4 | Providers unavailable |
@@ -84,6 +89,7 @@ Offline examples, which run in CI against recordings in this repository (`fixtur
 
 ```console
 $ txstory replay fixtures/devnet/anvil-0xdce671e4526d6d277669b28b2a9108c3f291951eb893a8d716101d94a2640359.json   # exit 0
+$ txstory replay fixtures/devnet/anvil-0x27dbc58bd2861be2ea7264fd2d03aa97510ebc7ff3e00ab59a0bb114cbbe4aab.json --abi fixtures/devnet/Demo.abi.json   # exit 0
 $ txstory explain --recording fixtures/devnet/anvil-0x27dbc58bd2861be2ea7264fd2d03aa97510ebc7ff3e00ab59a0bb114cbbe4aab.json --abi fixtures/devnet/Demo.abi.json   # exit 0
 $ txstory explain --recording fixtures/synthetic/ethereum-0xefb65ab1ab71b94063c0ee8e8c7bdde47b808c19f4e653ed931e3006f4983112.json --json   # exit 0
 $ txstory explain --recording fixtures/synthetic/ethereum-0xfeb89d8c5b4ec361b7e3bd004eef2b156f0d4a9f39515d07377a357935891eff.json --strict   # exit 1

@@ -67,5 +67,7 @@ is checked by tests.
 - **Decoder modules** are trusted code reviewed in this repository. They
   declare ABI data and may add interpretations, but cannot change balances.
 - **Credentials** live only in endpoint URLs or the explorer key, server-side.
-  Every stored or printed URL passes through `redactUrl`. Cache identity uses
-  the private full URL; recordings use the public redacted URL.
+  Shareable output shows a configured endpoint only when the whole URL is
+  trusted (an exact built-in public endpoint or a bare loopback origin); other
+  endpoints are withheld, and error text is scrubbed (see
+  [Provider URLs in shareable output](configuration.md#provider-urls-in-shareable-output)). Cache identity uses the private full URL.

@@ -30,6 +30,8 @@ export class BlockscoutClient {
     private maxPages: number,
     /** Longer timeout for endpoints the explorer computes slowly (measured 12 to 20 s). */
     private slowTimeoutMs?: number,
+    /** Shareable form of request URLs for source records (shareableUrlMapper). */
+    private shareable: (url: string) => string = redactUrl,
   ) {}
 
   private url(path: string, params: Record<string, string> = {}): string {
@@ -54,7 +56,7 @@ export class BlockscoutClient {
     const status: SourceRecord['status'] = notCaptured ? 'empty' : res.failure ? 'error' : !res.ok ? (res.httpStatus === 404 ? 'empty' : 'error') : json === undefined ? 'error' : 'ok';
     const note = notCaptured ? 'not captured in this recording (endpoint added after the fixture was recorded)' : res.failure ?? (res.httpStatus === 403 ? 'HTTP 403: the explorer refused this client (bot protection or access policy)' : res.httpStatus === 429 ? 'HTTP 429: rate limited' : !res.ok ? `HTTP ${res.httpStatus}` : json === undefined ? 'response was not valid JSON' : undefined);
     this.sources.push({
-      id: sourceId, kind: 'explorer', provider: 'Blockscout', url: redactUrl(url), method, retrievedAt: res.retrievedAt,
+      id: sourceId, kind: 'explorer', provider: 'Blockscout', url: this.shareable(url), method, retrievedAt: res.retrievedAt,
       status, mode: res.mode, sha256: res.sha256, httpStatus: res.httpStatus, ...(note ? { note } : {}),
     });
     // Return this request's own note: concurrent requests make `this.sources.at(-1)` unreliable.

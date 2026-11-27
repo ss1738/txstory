@@ -108,6 +108,9 @@ describe('reconstruction report', () => {
     expect(report.check.sameOutput).toBe(false);
     expect(report.notes.join(' ')).toMatch(/decodes with ABIs you supplied \(Demo\.abi\.json\)/);
     expect(report.notes.join(' ')).not.toMatch(/edited recording/);
+    expect(report.differsOnlyByUserAbis).toBe(true);
+    // The cause is known, so the generic "cannot list differences" advice is not shown.
+    expect(report.notes.join(' ')).not.toMatch(/does not embed its original story/);
     if (result.kind !== 'ok') throw new Error('expected a story');
     expect(result.story.revert?.summary).toBe('InsufficientBalance(available="1000000000000000000", required="5")');
   });
@@ -177,5 +180,65 @@ describe('browser safety', () => {
     const inputs = Object.keys(out.metafile!.inputs);
     expect(inputs.some((i) => i.includes('node:') || /engine\/(config|fixture-files)\.ts$/.test(i))).toBe(false);
     expect(out.outputFiles[0]!.text).not.toMatch(/\bBuffer\.from\b|require\("node:/);
+  });
+});
+
+describe('ABI-only differences are excused only when the original output reproduces', () => {
+  const CUSTOM = 'fixtures/devnet/anvil-0x27dbc58bd2861be2ea7264fd2d03aa97510ebc7ff3e00ab59a0bb114cbbe4aab.json';
+  const abi = async (json: unknown, label: string) => {
+    const { AbiLibrary } = await import('../../src/core/abi.js');
+    const library = new AbiLibrary();
+    return { library, labels: [{ label, entries: library.addJson(json, 'user', label) }] };
+  };
+  const demoAbi = () => abi(JSON.parse(readFileSync('fixtures/devnet/Demo.abi.json', 'utf8')), 'Demo.abi.json');
+  const unrelatedAbi = () => abi(['error Unrelated(uint256 code)'], 'unrelated.json');
+  const otherDigest = (d: string) => (d[0] === '0' ? '1' : '0') + d.slice(1);
+
+  it('(a) identical evidence and a real reinterpretation: excused, and the original still reproduces', async () => {
+    const { report } = await reconstruct(load(CUSTOM), config, { userAbi: await demoAbi() });
+    expect(report).toMatchObject({ verdict: 'differs', differsOnlyByUserAbis: true, userAbisChangedOutput: true });
+    expect(report.withoutUserAbis).toMatchObject({ sameEvidence: true, sameOutput: true });
+    expect(report.withoutUserAbis!.replayDigest).toBe(report.check.recordedDigest);
+  });
+
+  it('(b) changed evidence is not excused by an ABI', async () => {
+    const rec = load(CUSTOM);
+    const key = Object.keys(rec.exchanges).find((k) => rec.exchanges[k]!.method === 'eth_getTransactionReceipt')!;
+    const receipt = JSON.parse(rec.exchanges[key]!.text);
+    receipt.result.gasUsed = '0x' + (BigInt(receipt.result.gasUsed) + 1n).toString(16);
+    rec.exchanges[key]!.text = JSON.stringify(receipt);
+    const { report } = await reconstruct(rec, config, { userAbi: await demoAbi() });
+    expect(report).toMatchObject({ verdict: 'differs', differsOnlyByUserAbis: false });
+    expect(report.withoutUserAbis).toMatchObject({ sameEvidence: false });
+  });
+
+  it('(c) a stored output that already mismatched is not excused, and the report says the ABIs are not the cause', async () => {
+    const rec = load(CUSTOM);
+    rec.output = { ...rec.output!, storySha256: otherDigest(rec.output!.storySha256!) };
+    const { report } = await reconstruct(rec, config, { userAbi: await demoAbi() });
+    expect(report).toMatchObject({ verdict: 'differs', differsOnlyByUserAbis: false, userAbisChangedOutput: true });
+    expect(report.withoutUserAbis).toMatchObject({ sameEvidence: true, sameOutput: false });
+    expect(report.notes.join(' ')).toMatch(/Without your ABIs the rebuilt output also differs/);
+  });
+
+  it('(d) unused ABIs: no decoding changes; excused only when the original reproduces, and the report says nothing was decoded', async () => {
+    const ok = (await reconstruct(load(CUSTOM), config, { userAbi: await unrelatedAbi() })).report;
+    // The output lists unrelated.json among its ABI sources, so the digest differs; nothing else does.
+    expect(ok).toMatchObject({ verdict: 'differs', userAbisChangedOutput: false, differsOnlyByUserAbis: true });
+    expect(ok.withoutUserAbis).toMatchObject({ sameEvidence: true, sameOutput: true });
+    expect(ok.notes.join(' ')).toMatch(/did not change any decoding/);
+    const rec = load(CUSTOM);
+    rec.output = { ...rec.output!, storySha256: otherDigest(rec.output!.storySha256!) };
+    const bad = (await reconstruct(rec, config, { userAbi: await unrelatedAbi() })).report;
+    expect(bad).toMatchObject({ verdict: 'differs', userAbisChangedOutput: false, differsOnlyByUserAbis: false });
+  });
+
+  it('(e) metadata: a description edit does not matter; a recorded stage edit changes the rebuild and is not excused', async () => {
+    const described = load(CUSTOM); described.description = 'edited description';
+    expect((await reconstruct(described, config, { userAbi: await demoAbi() })).report.differsOnlyByUserAbis).toBe(true);
+    const staged = load(CUSTOM); staged.output = { ...staged.output!, stage: 'fast' };
+    const r = (await reconstruct(staged, config, { userAbi: await demoAbi() })).report;
+    expect(r.differsOnlyByUserAbis).toBe(false);
+    expect(r.withoutUserAbis?.sameOutput).toBe(false);
   });
 });

@@ -12,6 +12,11 @@ export interface ChainEndpoints {
   rpcs: RpcEndpoint[];
   explorerApi: string | null;
   explorerProvider: string;
+  /**
+   * Set when these endpoints were read from a recording: their URLs are already
+   * in the shareable form written at recording time and are shown as stored.
+   */
+  recorded?: boolean;
 }
 
 export type TraceMode = 'auto' | 'off';
@@ -32,6 +37,12 @@ export interface EngineConfig {
    * method are skipped and recorded. off: never request traces.
    */
   trace: TraceMode;
+  /**
+   * Exact endpoint URLs, besides the built-in public endpoints, that may be
+   * shown in shareable output (for example the synthetic generator's
+   * `.invalid` endpoints). Only an exact match is trusted; see isTrustedEndpointUrl.
+   */
+  trustedEndpointUrls?: readonly string[];
 }
 
 export const ENGINE_VERSION = '0.4.0';
@@ -150,6 +161,116 @@ export function recordingEndpoints(): Record<ChainKey, ChainEndpoints> {
 
 export function networkName(chain: ChainKey): string {
   try { return getChain(chain).name; } catch { return chain; }
+}
+
+/**
+ * Shareable provider URLs.
+ *
+ * Stories, recordings, exports, API responses and CLI output show an
+ * endpoint's URL only when the endpoint itself is trusted (isTrustedEndpointUrl).
+ * Any other configured endpoint is withheld and shown as
+ * `https://rpc-<n>.withheld.invalid/` or `https://explorer.withheld.invalid`
+ * followed by the request path TxStory generated, with its provider label kept.
+ * A trusted host does not make arbitrary path, query or userinfo trusted.
+ */
+const PUBLIC_ENDPOINTS: string[] = Object.values(PUBLIC_DEFAULTS).flatMap((d) => [...d.rpcs.map((r) => r.url), d.explorer]);
+
+/** scheme://host[:port]/path without a trailing slash; null when the URL has userinfo, a query or a fragment. */
+function endpointIdentity(url: string): string | null {
+  let u: URL;
+  try { u = new URL(url); } catch { return null; }
+  if (u.username || u.password || u.search || u.hash) return null;
+  return `${u.protocol}//${u.host.toLowerCase()}${u.pathname.replace(/\/+$/, '')}`;
+}
+
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+/**
+ * Whether a configured endpoint URL may be shown. True only for an exact match
+ * (no userinfo, query or fragment; the same path) with a built-in public
+ * endpoint or one of `trusted`, or for a bare loopback origin such as
+ * `http://127.0.0.1:8545/` (scheme, host and port only). Loopback and
+ * `.invalid` hosts are otherwise treated like any other host.
+ */
+export function isTrustedEndpointUrl(url: string, trusted: readonly string[] = []): boolean {
+  const id = endpointIdentity(url);
+  if (id === null) return false;
+  const u = new URL(url);
+  if (LOOPBACK_HOSTS.has(u.hostname.toLowerCase()) && (u.pathname === '/' || u.pathname === '')) return true;
+  return [...PUBLIC_ENDPOINTS, ...trusted].some((t) => endpointIdentity(t) === id);
+}
+
+export const withheldRpcUrl = (index: number) => `https://rpc-${index}.withheld.invalid/`;
+const WITHHELD_EXPLORER_BASE = 'https://explorer.withheld.invalid';
+const WITHHELD_UNKNOWN_URL = 'https://endpoint.withheld.invalid/';
+
+/**
+ * The part of an explorer request URL that TxStory generated: the path after
+ * the configured base and the query parameters it set. Its own `apikey`
+ * parameter is replaced with REDACTED; other parameters come from the
+ * explorer's pagination responses, not from configuration.
+ */
+function generatedPart(url: string, base: string): string {
+  const rest = url.slice(base.length);
+  const u = new URL(rest.startsWith('/') || rest.startsWith('?') ? rest : `/${rest}`, 'https://generated.invalid');
+  if (u.searchParams.has('apikey')) u.searchParams.set('apikey', 'REDACTED');
+  return `${u.pathname}${u.search}`;
+}
+
+/**
+ * Maps a request URL made for these endpoints to its shareable form. Used for
+ * source records, recorded exchanges, recording endpoints and request keys:
+ * distinct requests keep distinct forms (endpoint position, generated path and
+ * query), so new recordings rebuild offline from shareable URLs alone.
+ */
+export function shareableUrlMapper(ep: Pick<ChainEndpoints, 'rpcs' | 'explorerApi' | 'recorded'>, trusted: readonly string[] = []): (url: string) => string {
+  if (ep.recorded) return redactUrl;
+  const explorerBase = ep.explorerApi ? ep.explorerApi.replace(/\/+$/, '') : null;
+  const explorerShown = explorerBase !== null && isTrustedEndpointUrl(explorerBase, trusted);
+  return (url: string) => {
+    const i = ep.rpcs.findIndex((r) => r.url === url);
+    if (i >= 0) return isTrustedEndpointUrl(url, trusted) ? redactUrl(url) : withheldRpcUrl(i + 1);
+    if (explorerBase !== null && url === explorerBase) return redactUrl(explorerShown ? explorerBase : WITHHELD_EXPLORER_BASE);
+    if (explorerBase !== null && (url.startsWith(`${explorerBase}/`) || url.startsWith(`${explorerBase}?`))) {
+      return redactUrl((explorerShown ? explorerBase : WITHHELD_EXPLORER_BASE) + generatedPart(url, explorerBase));
+    }
+    return isTrustedEndpointUrl(url, trusted) ? redactUrl(url) : WITHHELD_UNKNOWN_URL;
+  };
+}
+
+/** Shareable form of a URL that appears in a message (CLI errors): shown only when it is a trusted endpoint. */
+export function shareableLooseUrl(url: string): string {
+  return isTrustedEndpointUrl(url) ? redactUrl(url) : WITHHELD_UNKNOWN_URL;
+}
+
+/** decodeURIComponent that returns the input unchanged when the percent encoding is malformed. */
+function safeDecode(v: string): string {
+  try { return decodeURIComponent(v); } catch { return v; }
+}
+
+/**
+ * Text fragments of withheld endpoints and the explorer API key, removed from
+ * provider error text before it is analysed or recorded (a provider error can
+ * echo its URL or key). Fragments: userinfo, path segments, query values, and
+ * host labels other than the last two, each in raw and decoded form; kept when
+ * at least 6 characters with a digit, or at least 16 characters. Userinfo and
+ * the explorer API key are always kept. Trusted endpoints contribute nothing.
+ */
+export function secretFragments(ep: Pick<ChainEndpoints, 'rpcs' | 'explorerApi' | 'recorded'>, explorerApiKey: string | null, trusted: readonly string[] = []): string[] {
+  const out = new Set<string>();
+  if (ep.recorded) return [];
+  if (explorerApiKey && explorerApiKey.length >= 4 && explorerApiKey !== 'REDACTED') out.add(explorerApiKey);
+  const take = (v: string) => { for (const x of new Set([v, safeDecode(v)])) if ((x.length >= 6 && /\d/.test(x)) || x.length >= 16) out.add(x); };
+  for (const url of [...ep.rpcs.map((r) => r.url), ...(ep.explorerApi ? [ep.explorerApi] : [])]) {
+    if (isTrustedEndpointUrl(url, trusted)) continue;
+    let u: URL;
+    try { u = new URL(url); } catch { continue; }
+    for (const v of [u.username, u.password]) if (v) { out.add(v); out.add(safeDecode(v)); }
+    for (const seg of u.pathname.split('/')) if (seg) take(seg);
+    for (const v of u.searchParams.values()) if (v) take(v);
+    for (const label of u.hostname.split('.').slice(0, -2)) take(label);
+  }
+  return [...out].filter(Boolean).sort((a, b) => b.length - a.length);
 }
 
 /**

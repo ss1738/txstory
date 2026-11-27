@@ -48,7 +48,9 @@ describe('CLI conventions', () => {
     const secret = ['sk', 'live', 'abcdefghijklmnopqrstuvwxyz0123'].join('_');
     const r = await run(['networks', '--json', '--rpc', `https://rpc.example/v2/${secret}?apikey=${secret}`], { TXSTORY_RPC_ETHEREUM: `https://user:${secret}@rpc.example/` });
     expect(r.stdout + r.stderr).not.toContain(secret);
-    expect(r.stdout).toContain('REDACTED');
+    // Configured endpoints are withheld entirely in shareable output, host included.
+    expect(r.stdout).toContain('https://rpc-1.withheld.invalid/');
+    expect(r.stdout).not.toContain('rpc.example');
   });
   it('rejects unknown options and commands as usage errors', async () => {
     expect((await run(['explain', '--nope'])).code).toBe(2);
@@ -71,3 +73,31 @@ describe('CLI conventions', () => {
     expect(c.differences[0].area).toBe('identity');
   });
 });
+
+describe('replay with --abi', () => {
+  const REC = 'fixtures/devnet/anvil-0x27dbc58bd2861be2ea7264fd2d03aa97510ebc7ff3e00ab59a0bb114cbbe4aab.json';
+  it('decoding with a supplied ABI is the requested result: exit 0, evidence unchanged, report says why the output changed', async () => {
+    const r = await run(['replay', REC, '--abi', 'fixtures/devnet/Demo.abi.json', '--json']);
+    expect(r.code).toBe(0);
+    const j = JSON.parse(r.stdout);
+    expect(j.ok).toBe(true);
+    expect(j.report.check).toMatchObject({ sameEvidence: true, sameOutput: false });
+    expect(j.report.differsOnlyByUserAbis).toBe(true);
+    expect(j.story.revert.summary).toBe('InsufficientBalance(available="1000000000000000000", required="5")');
+  });
+  it('an edited recording still fails with --abi: changed evidence is never excused', async () => {
+    const { mkdtempSync, writeFileSync } = await import('node:fs');
+    const { tmpdir } = await import('node:os');
+    const rec = JSON.parse(readFileSync(REC, 'utf8'));
+    const key = Object.keys(rec.exchanges).find((k) => rec.exchanges[k].method === 'eth_getTransactionReceipt')!;
+    const receipt = JSON.parse(rec.exchanges[key].text);
+    receipt.result.gasUsed = '0x' + (BigInt(receipt.result.gasUsed) + 1n).toString(16);
+    rec.exchanges[key].text = JSON.stringify(receipt);
+    const file = `${mkdtempSync(`${tmpdir()}/txstory-abi-`)}/edited.json`;
+    writeFileSync(file, JSON.stringify(rec));
+    const r = await run(['replay', file, '--abi', 'fixtures/devnet/Demo.abi.json', '--json']);
+    expect(r.code).toBe(1);
+    expect(JSON.parse(r.stdout).report).toMatchObject({ verdict: 'differs', differsOnlyByUserAbis: false });
+  });
+});
+

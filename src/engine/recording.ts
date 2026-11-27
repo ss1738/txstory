@@ -25,8 +25,8 @@ import { BUILTIN_CHAIN_KEYS, getChain, isChainKey, parseChainFile, registerChain
 import { isTxHash } from '../core/hex.js';
 import type { Story } from '../core/types.js';
 import { assembleStory, type AssembleOptions, type StoryResult } from './analyze.js';
-import { ENGINE_VERSION, recordingEndpoints, redactUrl, type ChainEndpoints, type EngineConfig } from './defaults.js';
-import { FIXTURE_SCHEMA_V1, FIXTURE_SCHEMA_V2, NOT_RECORDED, RecordingTransport, replayTransport, sha256Hex, type FixtureFile, type Transport, type TransportRequest } from './transport.js';
+import { ENGINE_VERSION, recordingEndpoints, secretFragments, shareableUrlMapper, type ChainEndpoints, type EngineConfig } from './defaults.js';
+import { FIXTURE_SCHEMA_V1, FIXTURE_SCHEMA_V2, NOT_RECORDED, RecordingTransport, replayTransport, scrubbingTransport, sha256Hex, type FixtureFile, type Transport, type TransportRequest } from './transport.js';
 
 export const RECORDING_SCHEMA_V3 = 'txstory-fixture-v3';
 export const MAX_RECORDING_BYTES = 64 * 1024 * 1024;
@@ -80,9 +80,13 @@ export function evidenceDigest(story: Story): string {
 
 /** Record an analysis: run it through a RecordingTransport and capture everything needed to replay it. */
 export async function recordAnalysis(chain: string, hash: string, live: Transport, config: EngineConfig, opts: AssembleOptions & { description?: string; embedStory?: boolean; origin?: NonNullable<Recording['origin']>; recorder?: string } = {}): Promise<{ result: StoryResult; recording: Recording }> {
-  const recorder = new RecordingTransport(live);
+  const ep = config.endpoints[chain];
+  if (!ep) throw new Error(`No endpoints are configured for network "${chain}".`);
+  // The recording stores only shareable URLs and scrubbed error text; request keys use the shareable URLs.
+  const trusted = config.trustedEndpointUrls ?? [];
+  const shareable = shareableUrlMapper(ep, trusted);
+  const recorder = new RecordingTransport(scrubbingTransport(live, secretFragments(ep, config.explorerApiKey, trusted)), shareable);
   const result = await assembleStory(chain, hash, recorder, config, opts);
-  const ep = config.endpoints[chain]!;
   const net = CHAINS[chain]!;
   const recording: Recording = {
     schema: RECORDING_SCHEMA_V3,
@@ -90,7 +94,7 @@ export async function recordAnalysis(chain: string, hash: string, live: Transpor
     recorder: opts.recorder ?? `txstory ${ENGINE_VERSION}`,
     origin: opts.origin ?? 'captured',
     engine: { name: 'txstory', version: ENGINE_VERSION, storySchema: result.kind === 'ok' ? result.story.schemaVersion : 3 },
-    endpoints: { rpcs: ep.rpcs.map((r) => ({ url: redactUrl(r.url), provider: r.provider })), explorerApi: ep.explorerApi ? redactUrl(ep.explorerApi) : null },
+    endpoints: { rpcs: ep.rpcs.map((r) => ({ url: shareable(r.url), provider: r.provider })), explorerApi: ep.explorerApi ? shareable(ep.explorerApi) : null },
     options: { trace: opts.trace ?? config.trace },
     config: { maxExplorerPages: config.maxExplorerPages, maxTokenMetadataCalls: config.maxTokenMetadataCalls, explorerApiKeyUsed: !!config.explorerApiKey },
     ...(net.builtin ? {} : { network: { ...net } }),
@@ -226,7 +230,7 @@ export interface ReplayOptions extends Pick<AssembleOptions, 'userAbi' | 'stage'
 export async function replayRecording(rec: Recording, base: EngineConfig, opts: ReplayOptions = {}): Promise<StoryResult> {
   const network = recordingNetwork(rec);
   const endpoints: ChainEndpoints = rec.endpoints
-    ? { rpcs: rec.endpoints.rpcs.map((x) => ({ ...x })), explorerApi: rec.endpoints.explorerApi, explorerProvider: 'Blockscout' }
+    ? { rpcs: rec.endpoints.rpcs.map((x) => ({ ...x })), explorerApi: rec.endpoints.explorerApi, explorerProvider: 'Blockscout', recorded: true }
     : recordingEndpoints()[rec.chain] ?? (() => { throw new Error(`no recording endpoints for ${rec.chain}`); })();
   const config: EngineConfig = {
     ...base,
