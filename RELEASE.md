@@ -13,8 +13,14 @@ Deployed 2026-11-27 at https://txstory-site.satyawansinghinuk.workers.dev.
   `7855f382-7d1a-4c71-8104-e70e7b2ec24d`.
 - Checked against the live site after deployment: the static-site and
   deployment browser suites plus reload, content-type and source-commit checks
-  (26 passed in Chrome), live response headers, and byte-for-byte comparison of
-  served files with the local build.
+  (26 passed in Chrome), and the live response headers.
+- Six live responses were compared with the local build and matched exactly:
+  `/` (`index.html`), the two application scripts, `recordings/index.json`, one
+  devnet recording, and `source-commit.txt`. This covers only those six
+  responses; other files were not compared byte for byte.
+- The site serves the included example recordings and rebuilds recordings a
+  visitor opens, in the browser. It has no RPC backend and does not look up
+  live transactions.
 - Missing files return the app shell with 200, as described in
   `deploy/cloudflare/README.md`. Human usability is not measured, and the site
   performs no cryptographic verification.

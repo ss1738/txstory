@@ -2,8 +2,8 @@
 
 This directory holds everything needed to publish the static developer site
 (`npm run build:site`) on Cloudflare. Nothing here deploys automatically. The
-public copy at https://txstory-site.satyawansinghinuk.workers.dev was deployed manually from
-`v0.4.0` on 2026-11-27 (see RELEASE.md, "Website").
+public copy at https://txstory-site.satyawansinghinuk.workers.dev was deployed
+manually from `v0.4.0` on 2026-11-27 (see RELEASE.md, "Website").
 
 ## What is deployed
 

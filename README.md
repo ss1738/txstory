@@ -33,9 +33,12 @@ For each transaction, TxStory reports:
     evidence and the output are identical;
   - `compare` explains differences between two analyses.
 
-**Website:** https://txstory-site.satyawansinghinuk.workers.dev. It rebuilds the bundled example recordings in your
-browser and opens recording files you choose; it does not look up live
-transactions.
+**Website:** https://txstory-site.satyawansinghinuk.workers.dev is a static
+demo. It rebuilds the included example recordings in your browser, and it can
+open a recording file you choose and rebuild that analysis on your device. It
+is not a hosted lookup service: it has no RPC backend and cannot fetch a
+transaction. For live analysis, run TxStory locally (see
+[Live analysis](#live-analysis-what-providers-you-need)).
 
 TxStory is read-only: no wallet, no signing, no accounts, no telemetry. It
 trusts the RPC nodes and explorer it queries (there is no light-client or proof
@@ -160,8 +163,8 @@ npm run site:preview                # http://127.0.0.1:4173
 The static site rebuilds the shipped example recordings in the browser, opens
 local recordings, and documents installation. It cannot look up live
 transactions and does not ask for an RPC URL. The public copy at
-https://txstory-site.satyawansinghinuk.workers.dev is built from the `v0.4.0` tag and served by
-Cloudflare Workers Static Assets with the configuration in
+https://txstory-site.satyawansinghinuk.workers.dev is built from the `v0.4.0`
+tag and served by Cloudflare Workers Static Assets with the configuration in
 [deploy/cloudflare](deploy/cloudflare/README.md). To host your own copy,
 `dist/site` can be served by any static file host that falls back to
 `404.html` for unknown paths.
