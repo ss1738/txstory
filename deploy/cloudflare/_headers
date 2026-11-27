@@ -1,0 +1,10 @@
+# Security headers for every response of the TxStory site.
+# The Content-Security-Policy is the one the build writes into index.html
+# (scripts/build-site.ts, SITE_CSP) plus frame-ancestors, which a meta tag
+# cannot set. tests/unit/site-deploy.test.ts checks that they stay equal.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Cross-Origin-Opener-Policy: same-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()

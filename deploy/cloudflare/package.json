@@ -1,0 +1,14 @@
+{
+  "name": "txstory-site-deploy",
+  "private": true,
+  "description": "Cloudflare deployment tooling for the TxStory website. Kept separate so the main install does not include Wrangler.",
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "./build.sh",
+    "preview": "wrangler dev --ip 127.0.0.1 --port 8788",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.162.0"
+  }
+}

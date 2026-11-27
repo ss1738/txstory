@@ -157,7 +157,8 @@ The static site rebuilds the shipped example recordings in the browser, opens
 local recordings, and documents installation. It cannot look up live
 transactions and does not ask for an RPC URL. It is not deployed anywhere by
 this project; `dist/site` can be served by any static file host that falls back
-to `404.html` for unknown paths.
+to `404.html` for unknown paths. A tested configuration for Cloudflare Workers
+Static Assets is in [deploy/cloudflare](deploy/cloudflare/README.md).
 
 **CLI** ([docs/cli.md](docs/cli.md)):
 
