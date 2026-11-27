@@ -14,10 +14,24 @@ export interface RpcCall<T> {
   /** Endpoints tried before this one, with the reason each was skipped. */
   failedAttempts: string[];
   error?: string;
+  /** The JSON-RPC error describes this node's limits (history, method, rate), so another node may answer. */
+  endpointLimited?: boolean;
 }
 
 /** A failure that justifies trying another endpoint (transport-level, not a JSON-RPC error). */
 const retryable = (r: TransportResponse) => !!r.failure || r.httpStatus === 403 || r.httpStatus === 429 || r.httpStatus >= 500 || r.httpStatus === 0;
+
+/**
+ * JSON-RPC errors that describe the answering node rather than the chain:
+ * pruned or missing history, an unsupported method, or a rate or size limit.
+ * Another configured node can answer these, so the client tries it. Errors
+ * about the request itself (for example "execution reverted" from eth_call)
+ * are the same on every node and are not retried.
+ */
+const ENDPOINT_LIMIT_MESSAGE = /prun|history|archive|missing trie node|header not found|state not available|not available|not supported|unsupported|does not exist\/is not available|method not found|rate limit|too many requests|limit exceeded|capacity/i;
+export function isEndpointLimitError(code: unknown, message: string): boolean {
+  return code === -32601 || code === -32005 || ENDPOINT_LIMIT_MESSAGE.test(message);
+}
 
 export class RpcClient {
   private id = 1;
@@ -39,7 +53,7 @@ export class RpcClient {
       const one = await this.callOne(endpoint, method, params);
       one.failedAttempts = [...failedAttempts];
       last = one;
-      const transportProblem = one.error !== undefined && retryable(one.response);
+      const transportProblem = one.error !== undefined && (retryable(one.response) || one.endpointLimited === true);
       const nullProblem = opts.retryOnNull && one.error === undefined && one.value === null;
       if (!transportProblem && !nullProblem) return one;
       if (nullProblem && !firstNull) firstNull = one;
@@ -62,7 +76,7 @@ export class RpcClient {
     if (!isObj(json)) return { ...base, value: null, error: 'invalid JSON-RPC response' };
     if (json.error !== undefined) {
       const msg = str(get(json, 'error', 'message')) ?? 'unknown error';
-      return { ...base, value: null, error: `RPC error: ${cleanUntrusted(msg, 160)?.text ?? 'unknown'}` };
+      return { ...base, value: null, error: `RPC error: ${cleanUntrusted(msg, 160)?.text ?? 'unknown'}`, endpointLimited: isEndpointLimitError(get(json, 'error', 'code'), msg) };
     }
     return { ...base, value: json.result ?? null };
   }
