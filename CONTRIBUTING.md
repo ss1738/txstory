@@ -102,6 +102,27 @@ debugging.
   adopt it. Regenerate the notices with
   `node scripts/third-party.mjs > THIRD_PARTY_NOTICES.md`.
 
+## Reviewing dependency updates
+
+Dependabot waits 14 days before proposing ordinary version updates. Its
+cooldown does not delay security-update pull requests. Review security fixes
+promptly and record any exception to the two-week adoption policy.
+
+Development-tool patch and minor updates are grouped. Major updates are
+proposed separately so compiler, runtime types, and browser-tool changes can
+be evaluated on their own. A Node container major upgrade also needs a review
+of the documented runtime and CI versions; a green build alone is not a
+decision to change the supported runtime.
+
+Before diagnosing a failed dependency pull request, check whether its branch
+includes the latest main-branch CI fixes. Regenerate third-party notices from
+the updated lockfile, inspect the notice diff, and run all required checks.
+Do not remove the notices check or weaken tests to accept an update.
+
+The cooldown configuration affects future version selection. It does not
+establish that an already-open pull request meets the age policy. Check the
+release dates of those updates explicitly before merging.
+
 ## Pull requests
 
 Keep them focused, and fill in the PR template checklist. Describe how you
