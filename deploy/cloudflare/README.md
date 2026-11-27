@@ -1,8 +1,9 @@
 # TxStory website on Cloudflare Workers Static Assets
 
 This directory holds everything needed to publish the static developer site
-(`npm run build:site`) on Cloudflare. Nothing here is deployed by the project
-automatically, and nothing has been deployed yet.
+(`npm run build:site`) on Cloudflare. Nothing here deploys automatically. The
+public copy at https://txstory-site.satyawansinghinuk.workers.dev was deployed manually from
+`v0.4.0` on 2026-11-27 (see RELEASE.md, "Website").
 
 ## What is deployed
 
@@ -73,11 +74,10 @@ not that a live deployment works.
 Needs a Cloudflare account and a user who can create and deploy Workers in it.
 Cloudflare's limits page lists 20,000 files per Worker version and 25 MiB per
 file on the Free plan, and static asset requests are not billed; this site is
-about 30 files. Expected, but not verified in this repository: `wrangler
-deploy` creates the `txstory-site` Worker on first use and, with
-`workers_dev: true`, serves it at
-`txstory-site.<account subdomain>.workers.dev`. The deploy output shows the
-actual URL.
+about 30 files. The first `wrangler deploy` created the `txstory-site` Worker
+and, with `workers_dev: true`, served it at
+`txstory-site.<account subdomain>.workers.dev`; the deploy output prints the
+URL and the version ID.
 
 ```bash
 cd deploy/cloudflare
@@ -86,6 +86,11 @@ npm ci
 npx wrangler login         # interactive browser sign-in to the Cloudflare account
 npx wrangler deploy
 ```
+
+If the browser sign-in cannot complete, an account API token that can edit
+Workers Scripts in that account works instead. Set `CLOUDFLARE_API_TOKEN` and
+`CLOUDFLARE_ACCOUNT_ID` in the shell that runs `npx wrangler deploy`, never in
+a file in this repository, and delete the token afterwards.
 
 A custom domain, if wanted, is a separate decision and needs DNS for that
 domain in the same Cloudflare account.

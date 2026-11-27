@@ -1,5 +1,24 @@
 # Releases
 
+## Website
+
+Deployed 2026-11-27 at https://txstory-site.satyawansinghinuk.workers.dev.
+
+- Cloudflare Workers Static Assets, project `txstory-site`, assets only: no
+  Worker script, bindings, secrets or backend.
+- Application built from `v0.4.0` (commit `57b2608`) with `deploy/cloudflare`
+  at commit `2547580` and Wrangler 4.162.0; `source-commit.txt` on the site
+  names the application commit.
+- Cloudflare version `e7c01508-ed17-4173-8962-5c2b02d727ac`, deployment
+  `7855f382-7d1a-4c71-8104-e70e7b2ec24d`.
+- Checked against the live site after deployment: the static-site and
+  deployment browser suites plus reload, content-type and source-commit checks
+  (26 passed in Chrome), live response headers, and byte-for-byte comparison of
+  served files with the local build.
+- Missing files return the app shell with 200, as described in
+  `deploy/cloudflare/README.md`. Human usability is not measured, and the site
+  performs no cryptographic verification.
+
 ## 0.4.0: published 2026-11-27
 
 - Merged through pull requests #3 (Node 22.23.5 for the container and CI),
@@ -8,7 +27,9 @@
   its four required checks passed.
 - Tag `v0.4.0` on commit `57b2608`, with a GitHub release. All four CI jobs
   passed on that commit.
-- The static site (`npm run build:site`) is not deployed.
+- The static site (`npm run build:site`) was not deployed at release time. It
+  was deployed afterwards from the unchanged `v0.4.0` tag; see "Website"
+  below.
 - Not published: no npm package (`"private": true`), no container image.
 - Human usability is not measured. Traces are tested only via dRPC and a local
   anvil node.
