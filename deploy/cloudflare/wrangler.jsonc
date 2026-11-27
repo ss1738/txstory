@@ -1,0 +1,16 @@
+// TxStory developer website on Cloudflare Workers Static Assets.
+// Assets only: there is no Worker script, no bindings, no secrets and no
+// backend. Build the asset directory first with ./build.sh (see README.md).
+{
+  "name": "txstory-site",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "send_metrics": false,
+  "assets": {
+    "directory": "./public",
+    // Unknown paths serve /index.html with 200, so deep links such as
+    // /start or /example/<network>/<hash> load the app.
+    "not_found_handling": "single-page-application",
+    "html_handling": "auto-trailing-slash"
+  }
+}
