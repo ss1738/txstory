@@ -19,8 +19,8 @@ The examples below write `txstory` for any of these forms.
   `{"txstory": "<version>", "command", "ok", ...}`. Human text is for reading;
   parse JSON.
 - **Credentials.** Configured provider URLs are withheld
-  (`https://rpc-1.withheld.invalid/`); only built-in public, loopback and
-  `.invalid` URLs are printed. See
+  (`https://rpc-1.withheld.invalid/`); only exact built-in public endpoints
+  and bare loopback origins are printed. See
   [Provider URLs in shareable output](configuration.md#provider-urls-in-shareable-output).
 - **Exit codes:**
 

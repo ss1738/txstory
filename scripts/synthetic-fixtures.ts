@@ -115,7 +115,9 @@ export function syntheticConfig(): EngineConfig {
   for (const network of ['ethereum', 'optimism', 'base', 'arbitrum']) {
     endpoints[network] = { rpcs: [{ url: `https://rpc.synthetic.invalid/${network}`, provider: 'Synthetic RPC (not a real provider)' }], explorerApi: `https://explorer.synthetic.invalid/${network}`, explorerProvider: 'Blockscout' };
   }
-  return { ...base, endpoints, trace: 'auto' };
+  // These endpoints are synthetic and credential-free, so recordings may show them.
+  const trustedEndpointUrls = Object.values(endpoints).flatMap((e) => [...e.rpcs.map((r) => r.url), ...(e.explorerApi ? [e.explorerApi] : [])]);
+  return { ...base, endpoints, trace: 'auto', trustedEndpointUrls };
 }
 
 if (process.argv[1]?.endsWith('synthetic-fixtures.ts')) {

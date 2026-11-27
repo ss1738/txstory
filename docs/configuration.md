@@ -52,19 +52,28 @@ the browser.
 ### Provider URLs in shareable output
 
 Stories, recordings, evidence exports, HTTP API responses, CLI output and the
-browser show a provider URL only when it is known not to carry a credential:
+browser show a configured endpoint's URL only when the endpoint is trusted.
+Trust is decided for the whole endpoint URL, never for a host alone:
 
-- the built-in public endpoints (the defaults listed in the README);
-- loopback hosts (`localhost`, `127.0.0.1`, `::1`);
-- the reserved `.invalid` domain (synthetic data and withheld placeholders).
+- an **exact** built-in public endpoint (the defaults listed in the README):
+  same scheme, host, port and path, with no userinfo, query or fragment;
+- a **bare loopback origin**: `http(s)://localhost`, `127.0.0.1` or `[::1]`
+  with an optional port and nothing else (no path, userinfo or query);
+- an exact URL listed in `EngineConfig.trustedEndpointUrls` by library code
+  (the synthetic fixture generator lists its `.invalid` endpoints this way).
 
-Every other endpoint you configure (`TXSTORY_RPC_<NETWORK>`, `--rpc`,
-`TXSTORY_EXPLORER_<NETWORK>`, `--explorer`, chain files) is **withheld**: it
-appears as `https://rpc-<n>.withheld.invalid/` (its position in the endpoint
-list) or `https://explorer.withheld.invalid/<request path>`, with its provider
-label (for example `custom RPC 1`). This does not depend on guessing which part
-of a URL is secret. Withheld forms also serve as the request identifiers in new
-recordings, so those recordings rebuild offline without the real URLs.
+Everything else is **withheld**, including a public host with an extra path or
+query, and `localhost` or `.invalid` URLs with a path, query or userinfo. This
+covers `TXSTORY_RPC_<NETWORK>`, `--rpc`, `TXSTORY_EXPLORER_<NETWORK>`,
+`--explorer` and chain files. A withheld RPC endpoint appears as
+`https://rpc-<n>.withheld.invalid/` (its position in the endpoint list) and a
+withheld explorer as `https://explorer.withheld.invalid` followed by the path
+and query TxStory generated for the request (the explorer's own `apikey`
+parameter becomes `REDACTED`). The provider label (for example
+`custom RPC 1`) is kept. These forms are also the request identifiers in new
+recordings: distinct requests stay distinct, and the recordings rebuild offline
+without the real URLs. Endpoints read back from a recording are shown as they
+were stored.
 
 Omitted on purpose: the real host, path and query of withheld endpoints. A
 reader of a shared recording learns which position and label answered each
@@ -78,10 +87,12 @@ the last two, when they have at least 6 characters including a digit or at
 least 16 characters. Successful responses are not changed.
 
 Limits: a secret shorter than those thresholds can survive in echoed error
-text; successful response bodies are recorded as received; and nothing makes
-an arbitrary provider response or a file you supply safe to share. Check a
-recording before sharing it. Recordings made before this change keep the URLs
-they were written with.
+text; successful response bodies are recorded as received; explorer pagination
+parameters come from explorer responses and are kept; and nothing makes an
+arbitrary provider response or a file you supply safe to share. Check a
+recording before sharing it. Recordings made by earlier versions keep the URLs
+they were written with, which may include credentials that the earlier
+redaction missed.
 
 ## Engine, CLI and analysis settings
 

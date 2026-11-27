@@ -197,8 +197,8 @@ The CLI keeps its output scriptable:
 - errors go to stderr;
 - exit codes are stable (`0` ok, `1` incomplete or different, `2` usage,
   `3` not found or pending, `4` providers down, `5` bad input file);
-- configured provider URLs are withheld; only built-in public, loopback and
-  `.invalid` URLs are printed.
+- configured provider URLs are withheld; only exact built-in public endpoints
+  and bare loopback origins are printed.
 
 **HTTP API** ([docs/api.md](docs/api.md); contract at `GET /api/openapi.json`):
 

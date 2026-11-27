@@ -38,8 +38,9 @@ export async function assembleStory(chain: ChainKey, hash: string, transport: Tr
   const ep = config.endpoints[chain];
   if (!ep) return { kind: 'unsupported', message: `No endpoints are configured for network "${chain}".`, sources: [] };
   // Provider error text can echo a credential: remove known fragments before anything reads it.
-  transport = scrubbingTransport(transport, secretFragments(ep, config.explorerApiKey));
-  const shareable = shareableUrlMapper(ep);
+  const trusted = config.trustedEndpointUrls ?? [];
+  transport = scrubbingTransport(transport, secretFragments(ep, config.explorerApiKey, trusted));
+  const shareable = shareableUrlMapper(ep, trusted);
   const rpc = new RpcClient(transport, ep.rpcs);
   const sources: SourceRecord[] = [];
   let n = 0;

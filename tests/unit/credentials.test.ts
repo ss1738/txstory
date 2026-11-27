@@ -113,19 +113,76 @@ describe('credential-bearing endpoints in shareable output', () => {
 });
 
 describe('which provider URLs are shown', () => {
-  it('shows only built-in public endpoints, loopback and .invalid hosts', async () => {
-    const { isShareableUrl, secretFragments } = await import('../../src/engine/defaults.js');
-    expect(isShareableUrl('https://ethereum-rpc.publicnode.com')).toBe(true);
-    expect(isShareableUrl('https://eth.blockscout.com/api/v2/transactions/0x' + '1'.repeat(64))).toBe(true);
-    expect(isShareableUrl('http://127.0.0.1:8545/')).toBe(true);
-    expect(isShareableUrl('https://rpc.synthetic.invalid/ethereum')).toBe(true);
-    // Lookalikes, userinfo on a public host, and arbitrary hosts are withheld.
-    expect(isShareableUrl('https://ethereum-rpc.publicnode.com.attacker.example/')).toBe(false);
-    expect(isShareableUrl('https://user:pw@ethereum-rpc.publicnode.com/')).toBe(false);
-    expect(isShareableUrl('https://ethereum-rpc.publicnode.comx/')).toBe(false);
-    expect(isShareableUrl('https://mainnet.example/v3/short1')).toBe(false);
+  it('trusts only exact built-in endpoints, explicitly listed endpoints, and bare loopback origins', async () => {
+    const { isTrustedEndpointUrl, secretFragments } = await import('../../src/engine/defaults.js');
+    expect(isTrustedEndpointUrl('https://ethereum-rpc.publicnode.com')).toBe(true);
+    expect(isTrustedEndpointUrl('https://ethereum-rpc.publicnode.com/')).toBe(true);
+    expect(isTrustedEndpointUrl('https://eth.blockscout.com')).toBe(true);
+    expect(isTrustedEndpointUrl('http://127.0.0.1:8545/')).toBe(true);
+    // A trusted host does not approve other paths, queries, userinfo or lookalike hosts.
+    expect(isTrustedEndpointUrl('https://ethereum-rpc.publicnode.com/Ab1cD2')).toBe(false);
+    expect(isTrustedEndpointUrl('https://ethereum-rpc.publicnode.com/?x=1')).toBe(false);
+    expect(isTrustedEndpointUrl('https://user:pw@ethereum-rpc.publicnode.com/')).toBe(false);
+    expect(isTrustedEndpointUrl('https://ethereum-rpc.publicnode.com.attacker.example/')).toBe(false);
+    expect(isTrustedEndpointUrl('http://127.0.0.1:8545/k/x1')).toBe(false);
+    expect(isTrustedEndpointUrl('http://u:p@localhost:8545/')).toBe(false);
+    // Reserved domains are not trusted by themselves; the synthetic generator lists its endpoints explicitly.
+    expect(isTrustedEndpointUrl('https://rpc.synthetic.invalid/ethereum')).toBe(false);
+    expect(isTrustedEndpointUrl('https://rpc.synthetic.invalid/ethereum', ['https://rpc.synthetic.invalid/ethereum'])).toBe(true);
+    expect(isTrustedEndpointUrl('https://rpc.synthetic.invalid/ethereum/x1', ['https://rpc.synthetic.invalid/ethereum'])).toBe(false);
     expect(secretFragments({ rpcs: [{ url: 'https://ethereum-rpc.publicnode.com', provider: 'PublicNode' }], explorerApi: null }, null)).toEqual([]);
     expect(secretFragments({ rpcs: [{ url: RPC1, provider: 'x' }], explorerApi: EXPLORER }, SECRETS.explorerKey).sort())
       .toEqual(['user', SECRETS.userinfo, SECRETS.shortPath, SECRETS.query, SECRETS.hostToken, SECRETS.explorerPath, SECRETS.explorerKey].sort());
+  });
+});
+
+describe('endpoint identity: an approved host does not approve arbitrary path, query or userinfo', () => {
+  // Each case: endpoints configured with a synthetic credential that must not reach shareable output.
+  const CASES: Array<{ name: string; rpc: string; explorer?: string; secrets: string[] }> = [
+    { name: 'built-in public RPC with a short credential path suffix', rpc: 'https://ethereum-rpc.publicnode.com/Ab1cD2', secrets: ['Ab1cD2'] },
+    { name: 'built-in public RPC with a credential under an unrecognized query name', rpc: 'https://ethereum-rpc.publicnode.com/?x=Zz9Yy8Ww7', secrets: ['Zz9Yy8Ww7'] },
+    { name: 'built-in explorer with a short credential path suffix', rpc: 'https://ethereum-rpc.publicnode.com', explorer: 'https://eth.blockscout.com/e7Xq2', secrets: ['e7Xq2'] },
+    { name: 'localhost with userinfo', rpc: 'http://bob:L0calPw9@localhost:8545/', secrets: ['L0calPw9'] },
+    { name: 'localhost with a short credential path', rpc: 'http://127.0.0.1:8545/k/Lp4Kq2', secrets: ['Lp4Kq2'] },
+    { name: 'localhost with a credential query', rpc: 'http://127.0.0.1:8545/?q=Lq7Zr3', secrets: ['Lq7Zr3'] },
+    { name: '.invalid host with userinfo, path and query credentials', rpc: 'https://u:Inv4lidPw@node.example.invalid/t/Iv8Tk2?s=Iv9Qs1', secrets: ['Inv4lidPw', 'Iv8Tk2', 'Iv9Qs1'] },
+  ];
+  for (const c of CASES) {
+    it(c.name, async () => {
+      const env = { TXSTORY_RPC_ETHEREUM: c.rpc, TXSTORY_EXPLORER_ETHEREUM: c.explorer ?? 'https://explorer.example.org/x', TXSTORY_TRACE: 'off' };
+      const config = engineConfigFromEnv(env);
+      const { result, recording } = await recordAnalysis('ethereum', swap.hash, provider, config, { stage: 'full', embedStory: true });
+      if (result.kind !== 'ok') throw new Error(`${result.kind}: ${result.message}`);
+      const out: string[] = [];
+      await main(['networks', '--json'], { out: (s) => out.push(s), err: (s) => out.push(s), env });
+      const artifacts = { recording: JSON.stringify(recording), story: JSON.stringify(result.story), evidence: JSON.stringify(buildEvidenceBundle(result.story)), networks: out.join('\n') };
+      for (const [name, text] of Object.entries(artifacts)) for (const s of c.secrets) expect(text, `${name} leaks ${s}`).not.toContain(s);
+      // The shareable recording still rebuilds offline to the same evidence and output.
+      const { report } = await reconstruct(parseRecording(artifacts.recording), engineConfigFromEnv({}));
+      expect(report).toMatchObject({ verdict: 'reproduced', missing: [] });
+    });
+  }
+
+  it('malformed percent encoding in a configured URL does not throw', async () => {
+    const config = engineConfigFromEnv({ TXSTORY_RPC_ETHEREUM: 'https://node.example/p%E0%A4%A/Mf5Tk9', TXSTORY_EXPLORER_ETHEREUM: 'off', TXSTORY_TRACE: 'off' });
+    const { result, recording } = await recordAnalysis('ethereum', swap.hash, provider, config, { stage: 'fast' });
+    expect(result.kind).toBe('ok');
+    expect(JSON.stringify(recording)).not.toContain('Mf5Tk9');
+  });
+});
+
+describe('withheld endpoints keep requests distinct and explorer paths usable', () => {
+  it('one recording key per distinct request; explorer resource paths survive under the placeholder base', async () => {
+    const sent = new Set<string>();
+    const logging: Transport = { send: async (req) => { sent.add(`${req.url}\n${JSON.stringify(req.body ?? null)}`); return live.send(req); } };
+    const { recording } = await recordAnalysis('ethereum', swap.hash, logging, engineConfigFromEnv(ENV), { stage: 'full' });
+    const exchanges = Object.values(recording.exchanges);
+    expect(Object.keys(recording.exchanges)).toHaveLength(sent.size);
+    const explorerUrls = exchanges.filter((e) => e.kind === 'explorer').map((e) => e.url);
+    expect(new Set(explorerUrls).size).toBe(explorerUrls.length);
+    expect(explorerUrls.length).toBeGreaterThanOrEqual(5);
+    for (const u of explorerUrls) expect(u).toMatch(new RegExp(`^https://explorer\\.withheld\\.invalid/api/v2/transactions/${swap.hash}(/[a-z-]+)?\\?apikey=REDACTED`));
+    // The two withheld RPC endpoints stay distinguishable.
+    expect(new Set(exchanges.filter((e) => e.kind === 'rpc').map((e) => e.url))).toEqual(new Set(['https://rpc-1.withheld.invalid/', 'https://rpc-2.withheld.invalid/']));
   });
 });

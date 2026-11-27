@@ -83,8 +83,9 @@ export async function recordAnalysis(chain: string, hash: string, live: Transpor
   const ep = config.endpoints[chain];
   if (!ep) throw new Error(`No endpoints are configured for network "${chain}".`);
   // The recording stores only shareable URLs and scrubbed error text; request keys use the shareable URLs.
-  const shareable = shareableUrlMapper(ep);
-  const recorder = new RecordingTransport(scrubbingTransport(live, secretFragments(ep, config.explorerApiKey)), shareable);
+  const trusted = config.trustedEndpointUrls ?? [];
+  const shareable = shareableUrlMapper(ep, trusted);
+  const recorder = new RecordingTransport(scrubbingTransport(live, secretFragments(ep, config.explorerApiKey, trusted)), shareable);
   const result = await assembleStory(chain, hash, recorder, config, opts);
   const net = CHAINS[chain]!;
   const recording: Recording = {
@@ -229,7 +230,7 @@ export interface ReplayOptions extends Pick<AssembleOptions, 'userAbi' | 'stage'
 export async function replayRecording(rec: Recording, base: EngineConfig, opts: ReplayOptions = {}): Promise<StoryResult> {
   const network = recordingNetwork(rec);
   const endpoints: ChainEndpoints = rec.endpoints
-    ? { rpcs: rec.endpoints.rpcs.map((x) => ({ ...x })), explorerApi: rec.endpoints.explorerApi, explorerProvider: 'Blockscout' }
+    ? { rpcs: rec.endpoints.rpcs.map((x) => ({ ...x })), explorerApi: rec.endpoints.explorerApi, explorerProvider: 'Blockscout', recorded: true }
     : recordingEndpoints()[rec.chain] ?? (() => { throw new Error(`no recording endpoints for ${rec.chain}`); })();
   const config: EngineConfig = {
     ...base,

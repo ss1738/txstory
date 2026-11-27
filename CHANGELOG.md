@@ -26,13 +26,19 @@ independently (see docs/formats.md).
 - **Not-found and pending results say when they are inconclusive.** A null
   answer from one endpoint is still reported, but the message now names the
   endpoint and lists configured endpoints that could not answer.
-- **Credentials in shareable output.** Configured endpoints other than the
-  built-in public, loopback and `.invalid` ones are withheld from stories,
-  recordings, evidence exports, API responses and CLI output
-  (`https://rpc-<n>.withheld.invalid/`), and known credential fragments are
-  removed from provider error text before analysis and recording. Previously
-  short path tokens, hostname tokens and secrets echoed in provider errors could
-  appear. Default, synthetic and devnet recordings are unchanged.
+- **Credentials in shareable output.** A configured endpoint's URL is shown
+  only when the whole URL is trusted: an exact built-in public endpoint, a bare
+  loopback origin, or an exact URL in `EngineConfig.trustedEndpointUrls`. All
+  others, including a public host with an extra path or query and `localhost`
+  or `.invalid` URLs with userinfo, a path or a query, are withheld from
+  stories, recordings, evidence exports, API responses and CLI output
+  (`https://rpc-<n>.withheld.invalid/`). Explorer request paths are kept under
+  the placeholder so requests stay distinct. Known credential fragments are
+  removed from provider error text before analysis and recording; malformed
+  percent encoding in a configured URL no longer throws. Previously short path
+  tokens, hostname tokens, unrecognized query parameters and secrets echoed in
+  provider errors could appear. Default, synthetic and devnet recordings are
+  unchanged.
 - After `record`, the CLI suggests the replay command in the form it was started
   with (`npm run -s txstory --` from a clone).
 

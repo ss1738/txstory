@@ -392,7 +392,7 @@ async function cmdNetworks(_pos: string[], f: Flags, io: Io): Promise<number> {
   const config = engineConfig(f, io);
   const list = chainKeys().map((k) => {
     const c = getChain(k); const e = config.endpoints[k];
-    return { key: k, name: c.name, chainId: c.chainId, builtin: c.builtin, feeModel: c.feeModel, rpc: e ? e.rpcs.map((r) => shareableUrlMapper(e)(r.url)) : [], explorerApi: e?.explorerApi ? shareableUrlMapper(e)(e.explorerApi) : null, trace: config.trace };
+    return { key: k, name: c.name, chainId: c.chainId, builtin: c.builtin, feeModel: c.feeModel, rpc: e ? e.rpcs.map((r) => shareableUrlMapper(e, config.trustedEndpointUrls)(r.url)) : [], explorerApi: e?.explorerApi ? shareableUrlMapper(e, config.trustedEndpointUrls)(e.explorerApi) : null, trace: config.trace };
   });
   if (has(f, 'json')) json(io, 'networks', { ok: true, networks: list });
   else for (const n of list) io.out(`${n.key.padEnd(10)} ${String(n.chainId).padEnd(8)} ${n.name}${n.builtin ? '' : ' (custom)'}\n           rpc: ${n.rpc.join(', ') || '(none)'}\n           explorer: ${n.explorerApi ?? 'off'}`);

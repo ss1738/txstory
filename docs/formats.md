@@ -49,7 +49,7 @@ generator (`scripts/synthetic-fixtures.ts`).
 | `chain`, `hash`, `description`, `recordedAt`, `recorder` | Identity |
 | `origin` | `captured` (real providers; the default when absent), `local-devnet` (a node you ran), or `synthetic` (generated responses, not real provider data). Replay of a synthetic recording marks every source and the story `synthetic`. |
 | `engine` | `{name, version, storySchema}` at recording time |
-| `endpoints` | The RPC and explorer URLs used, in shareable form: built-in public, loopback and `.invalid` URLs as they are, other configured endpoints withheld (`https://rpc-<n>.withheld.invalid/`). Replay issues requests to these same strings. |
+| `endpoints` | The RPC and explorer URLs used, in shareable form: trusted endpoints (exact built-in public endpoints, bare loopback origins, explicitly trusted URLs) as they are, others withheld (`https://rpc-<n>.withheld.invalid/`). Replay issues requests to these same strings. |
 | `options` | `{trace}`. v1/v2 recordings have no traces, so replay uses `off`. |
 | `config` | `{maxExplorerPages, maxTokenMetadataCalls, explorerApiKeyUsed}`. The key itself is never stored. |
 | `network` | The network definition, for custom networks (validated on read). Replay analyses the recording with exactly this definition, independently of other recordings and of networks registered under the same key. |
@@ -66,8 +66,7 @@ What a recording is enough for:
 
 What it excludes:
 
-- configured endpoint URLs other than built-in public, loopback and `.invalid`
-  ones (withheld; see [Provider URLs in shareable output](configuration.md#provider-urls-in-shareable-output)),
+- configured endpoint URLs that are not trusted (withheld; see [Provider URLs in shareable output](configuration.md#provider-urls-in-shareable-output)),
   and the explorer API key (reduced to a boolean);
 - the local environment;
 - anything not requested by the analysis.
