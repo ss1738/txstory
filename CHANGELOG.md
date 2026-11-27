@@ -34,7 +34,10 @@ independently (see docs/formats.md).
   stories, recordings, evidence exports, API responses and CLI output
   (`https://rpc-<n>.withheld.invalid/`). Explorer request paths are kept under
   the placeholder so requests stay distinct. Known credential fragments are
-  removed from provider error text before analysis and recording; malformed
+  removed from provider error responses before analysis and recording (transport
+  failures, non-2xx bodies, and top-level JSON-RPC `error` members only; string
+  values are scrubbed and JSON structure, ids and numeric codes are kept;
+  successful responses are never changed); malformed
   percent encoding in a configured URL no longer throws. Previously short path
   tokens, hostname tokens, unrecognized query parameters and secrets echoed in
   provider errors could appear. Default, synthetic and devnet recordings are

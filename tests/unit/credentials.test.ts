@@ -186,3 +186,74 @@ describe('withheld endpoints keep requests distinct and explorer paths usable', 
     expect(new Set(exchanges.filter((e) => e.kind === 'rpc').map((e) => e.url))).toEqual(new Set(['https://rpc-1.withheld.invalid/', 'https://rpc-2.withheld.invalid/']));
   });
 });
+
+describe('error-response sanitization is protocol-aware', () => {
+  const FRAG = '123456';
+  const reply = (text: string, extra: Partial<TransportResponse> = {}): Transport => ({
+    send: async () => ({ ok: true, httpStatus: 200, text, sha256: 'original', retrievedAt: '2026-11-27T00:00:00.000Z', mode: 'live', ...extra }),
+  });
+  const rpcReq = { kind: 'rpc' as const, provider: 'P', method: 'eth_call', url: 'https://node.example/', body: { jsonrpc: '2.0', id: 1, method: 'eth_call', params: [] } };
+  const scrubbed = async (text: string, extra: Partial<TransportResponse> = {}, req: typeof rpcReq | { kind: 'explorer'; provider: string; method: string; url: string } = rpcReq) => {
+    const { scrubbingTransport } = await import('../../src/engine/transport.js');
+    return scrubbingTransport(reply(text, extra), [FRAG]).send(req as never);
+  };
+
+  it('leaves a successful response with an error-named field byte-identical', async () => {
+    const body = '{"jsonrpc":"2.0","id":1,"result":{"error":"application event","value":"123456"}}';
+    const r = await scrubbed(body);
+    expect(r.text).toBe(body);
+    expect(r.sha256).toBe('original');
+    // The same holds for a successful explorer response.
+    const explorer = '{"items":[{"error":"x","value":"123456"}],"next_page_params":null}';
+    expect((await scrubbed(explorer, {}, { kind: 'explorer', provider: 'B', method: 'GET /x', url: 'https://e.example/x' })).text).toBe(explorer);
+  });
+
+  it('scrubs a top-level JSON-RPC error message and keeps id, version and code', async () => {
+    const r = await scrubbed('{"jsonrpc":"2.0","id":7,"error":{"code":-32000,"message":"bad key 123456 for this project","data":{"hint":"key 123456","n":5}}}');
+    const j = JSON.parse(r.text);
+    expect(j).toEqual({ jsonrpc: '2.0', id: 7, error: { code: -32000, message: 'bad key REDACTED for this project', data: { hint: 'key REDACTED', n: 5 } } });
+    expect(r.sha256).not.toBe('original');
+  });
+
+  it('recognizes a top-level error member that appears after character 2,000', async () => {
+    const r = await scrubbed(JSON.stringify({ jsonrpc: '2.0', id: 1, padding: 'p'.repeat(2500), error: { code: -32000, message: 'echo 123456' } }));
+    expect(JSON.parse(r.text).error.message).toBe('echo REDACTED');
+  });
+
+  it('keeps JSON valid and numeric codes and ids intact when a fragment matches them', async () => {
+    const r = await scrubbed('{"jsonrpc":"2.0","id":123456,"error":{"code":123456,"message":"code 123456"}}');
+    const j = JSON.parse(r.text);
+    expect(j.id).toBe(123456);
+    expect(j.error.code).toBe(123456);
+    expect(j.error.message).toBe('code REDACTED');
+  });
+
+  it('covers non-2xx bodies and transport failures; malformed bodies are handled as text', async () => {
+    const html = await scrubbed('<html>forbidden for key 123456</html>', { ok: false, httpStatus: 403 });
+    expect(html.text).toBe('<html>forbidden for key REDACTED</html>');
+    const jsonErr = await scrubbed('{"message":"invalid key 123456","code":123456}', { ok: false, httpStatus: 401 });
+    expect(JSON.parse(jsonErr.text)).toEqual({ message: 'invalid key REDACTED', code: 123456 });
+    // A non-2xx JSON body without a fragment keeps its exact bytes and digest.
+    const untouched = '{ "message" : "Not found" }';
+    const nf = await scrubbed(untouched, { ok: false, httpStatus: 404 });
+    expect(nf.text).toBe(untouched);
+    expect(nf.sha256).toBe('original');
+    const failed = await scrubbed('', { ok: false, httpStatus: 0, failure: 'connect failed for 123456' });
+    expect(failed.failure).toBe('connect failed for REDACTED');
+    // A malformed successful body is passed through unchanged; the analysis reports it as invalid JSON.
+    const malformed = '{"jsonrpc":"2.0","error":{"message":"123456"';
+    expect((await scrubbed(malformed)).text).toBe(malformed);
+  });
+
+  it('records the sanitized error and replays the recording to the same evidence', async () => {
+    const { recording } = await recordAnalysis('ethereum', swap.hash, live, engineConfigFromEnv(ENV), { stage: 'full' });
+    const errorExchange = Object.values(recording.exchanges).find((e) => e.kind === 'rpc' && e.url === 'https://rpc-1.withheld.invalid/')!;
+    const j = JSON.parse(errorExchange.text);
+    expect(j.error.code).toBe(-32005);
+    // The userinfo username ("user") is always treated as secret, so that word is replaced too.
+    expect(j.error.message).toBe('limit exceeded for key REDACTED on REDACTED (REDACTED REDACTED, apikey REDACTED)');
+    const { report } = await reconstruct(parseRecording(JSON.stringify(recording)), engineConfigFromEnv({}));
+    expect(report).toMatchObject({ verdict: 'reproduced', missing: [] });
+    expect(report.check.sameEvidence).toBe(true);
+  });
+});

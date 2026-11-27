@@ -341,23 +341,57 @@ export class CachingTransport implements Transport {
 
 /**
  * Removes known secret fragments (see secretFragments) from provider error
- * responses: non-2xx bodies, transport failure text, and JSON-RPC bodies with
- * an `error` member. Successful data responses are passed through unchanged,
- * so the analysed chain data is never altered. The digest of a changed body is
- * recomputed, so evidence digests describe what was analysed and recorded.
+ * responses before anything reads or records them. Classification follows how
+ * the analysis reads responses, not a text search:
+ *
+ * - transport failures: the failure text is scrubbed;
+ * - non-2xx responses: a JSON body has its string values scrubbed (keys,
+ *   numbers and structure kept); any other body, including malformed JSON, is
+ *   scrubbed as plain text;
+ * - 2xx RPC responses whose parsed body has a top-level `error` member (what
+ *   providers/rpc.ts and providers/trace.ts treat as a JSON-RPC error): only
+ *   string values inside `error` are scrubbed; `jsonrpc`, `id`, numeric codes
+ *   and everything outside `error` are kept;
+ * - every other response, including successful results that contain
+ *   error-named fields, successful explorer responses, and malformed 2xx
+ *   bodies, is passed through byte-identical.
+ *
+ * A changed body gets a recomputed digest, so evidence digests describe what
+ * was analysed and recorded. Successful response bodies are not inspected and
+ * are not claimed to be credential-free.
  */
 export function scrubbingTransport(inner: Transport, fragments: readonly string[]): Transport {
   if (!fragments.length) return inner;
-  const scrub = (text: string) => fragments.reduce((acc, f) => acc.split(f).join('REDACTED'), text);
+  const scrubText = (text: string) => fragments.reduce((acc, f) => acc.split(f).join('REDACTED'), text);
+  const scrubStrings = (v: unknown): unknown => {
+    if (typeof v === 'string') return scrubText(v);
+    if (Array.isArray(v)) return v.map(scrubStrings);
+    if (v !== null && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, scrubStrings(x)]));
+    return v;
+  };
+  const parse = (text: string): unknown => { try { return JSON.parse(text); } catch { return undefined; } };
+  const sanitizeBody = (req: TransportRequest, res: TransportResponse): string => {
+    if (!res.text) return res.text;
+    const json = parse(res.text);
+    if (!res.ok || res.httpStatus < 200 || res.httpStatus >= 300) {
+      if (json === undefined) return scrubText(res.text);
+      const cleaned = scrubStrings(json);
+      return JSON.stringify(cleaned) === JSON.stringify(json) ? res.text : JSON.stringify(cleaned);
+    }
+    if (req.kind === 'rpc' && json !== null && typeof json === 'object' && !Array.isArray(json) && Object.prototype.hasOwnProperty.call(json, 'error')) {
+      const obj = json as Record<string, unknown>;
+      const cleaned = scrubStrings(obj.error);
+      return JSON.stringify(cleaned) === JSON.stringify(obj.error) ? res.text : JSON.stringify({ ...obj, error: cleaned });
+    }
+    return res.text;
+  };
   return {
     send: async (req) => {
       const res = await inner.send(req);
-      const isError = !res.ok || !!res.failure || /"error"\s*:/.test(res.text.slice(0, 2000));
-      if (!isError) return res;
-      const text = scrub(res.text);
-      const failure = res.failure === undefined ? undefined : scrub(res.failure);
+      const text = sanitizeBody(req, res);
+      const failure = res.failure === undefined ? undefined : scrubText(res.failure);
       if (text === res.text && failure === res.failure) return res;
-      return { ...res, text, sha256: sha256Hex(text), ...(failure === undefined ? {} : { failure }) };
+      return { ...res, text, sha256: text === res.text ? res.sha256 : sha256Hex(text), ...(failure === undefined ? {} : { failure }) };
     },
   };
 }
