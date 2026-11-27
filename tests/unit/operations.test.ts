@@ -18,6 +18,7 @@ import { MAX_HOPS, normalizeIp, parseTrustedProxies, rateKey, resolveClient } fr
 import { loadConfig, type ServerConfig } from '../../src/server/config.js';
 import { BoundedCache, BUDGET_EXHAUSTED, RateLimiter, Slots, withDeadline } from '../../src/server/limits.js';
 import { CachingTransport, RecordingTransport, type Transport, type TransportRequest, type TransportResponse } from '../../src/engine/transport.js';
+import { saveFixtureV2 } from '../../src/engine/fixture-files.js';
 
 const none = parseTrustedProxies('');
 const loopback = parseTrustedProxies('loopback');
@@ -407,7 +408,7 @@ describe('HTTP admission control (fake providers)', () => {
     const c = allCases(JSON.parse(readFileSync('tests/vectors/abi-cast.json', 'utf8'))).find((x) => x.id === 'eth-transfer')!;
     const rec = new RecordingTransport(new SyntheticProvider(c));
     await assembleStory('ethereum', c.hash, rec, { ...loadConfig({}), endpoints: recordingEndpoints(), explorerApiKey: null, trace: 'off' });
-    await rec.save(dir, { chain: 'ethereum', hash: c.hash, description: 'synthetic v2 test recording', recordedAt: '2026-01-01T00:00:00Z', recorder: 'test' });
+    await saveFixtureV2(rec, dir, { chain: 'ethereum', hash: c.hash, description: 'synthetic v2 test recording', recordedAt: '2026-01-01T00:00:00Z', recorder: 'test' });
     const custom = loadConfig({}).endpoints;
     for (const k of Object.keys(custom) as Array<keyof typeof custom>) custom[k] = { rpcs: [{ url: 'https://rpc.operator.example/v2/abcdefghijklmnopqrstuvwxyz123456', provider: 'custom RPC 1' }], explorerApi: 'https://explorer.operator.example', explorerProvider: 'Blockscout' };
     const { base } = await start({ endpoints: custom, explorerApiKey: 'operator-key', fixturesDir: `${dir},fixtures/synthetic,fixtures/devnet` }, transport);

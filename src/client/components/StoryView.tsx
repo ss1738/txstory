@@ -34,7 +34,12 @@ function readExactPref(): boolean {
   try { return localStorage.getItem('txstory.exact') === '1'; } catch { return false; }
 }
 
-function StoryLoaded({ story, loadingFull, enrichError, focus, headingRef, onRetry }: { story: Story; loadingFull: boolean; enrichError?: string; focus: string | null; headingRef: React.RefObject<HTMLHeadingElement | null>; onRetry: () => void }) {
+/** Where "Copy link" and "Download recording" point; null hides the action. */
+export interface StoryLinks { share: string | null; recording: string | null }
+
+export function StoryLoaded({ story, loadingFull, enrichError, focus, headingRef, onRetry, links, before }: { story: Story; loadingFull: boolean; enrichError?: string; focus: string | null; headingRef: React.RefObject<HTMLHeadingElement | null>; onRetry: () => void; links?: StoryLinks; before?: React.ReactNode }) {
+  const share = links ? links.share : window.location.origin + storyPath(story.chain, story.hash, story.mode !== 'live' && window.location.pathname.startsWith('/example/'));
+  const recordingHref = links ? links.recording : `/api/recording/${story.chain}/${story.hash}`;
   // Transient source failures (timeouts, HTTP 5xx/429) can succeed on retry; recorded stories cannot change.
   // Replayed (recorded or synthetic) stories cannot change on retry.
   const retryable = (story.mode === 'live' || story.mode === 'mixed') && story.sources.some((s) => s.status === 'error');
@@ -81,10 +86,10 @@ function StoryLoaded({ story, loadingFull, enrichError, focus, headingRef, onRet
         </div>
 
         <div className="actions" role="group" aria-label="Share and export">
-          <CopyButton value={window.location.origin + storyPath(story.chain, story.hash, story.mode !== 'live' && window.location.pathname.startsWith('/example/'))} label="Copy link" />
+          {share && <CopyButton value={share} label="Copy link" />}
           <button type="button" className="btn-ghost btn-xs" onClick={() => download(`txstory-${story.chain}-${story.hash.slice(0, 10)}-evidence.json`, 'application/json', JSON.stringify(buildEvidenceBundle(story), null, 2))}>Download evidence (.json)</button>
           <button type="button" className="btn-ghost btn-xs" onClick={() => download(`txstory-${story.chain}-${story.hash.slice(0, 10)}.svg`, 'image/svg+xml', buildStoryCardSvg(story))}>Download story card (.svg)</button>
-          <a className="btn-ghost btn-xs" href={`/api/recording/${story.chain}/${story.hash}`} download={`txstory-${story.chain}-${story.hash.slice(0, 10)}.recording.json`} title="Every provider response this analysis used; replay offline with `txstory replay <file>`">Download recording (.json)</a>
+          {recordingHref && <a className="btn-ghost btn-xs" href={recordingHref} download={`txstory-${story.chain}-${story.hash.slice(0, 10)}.recording.json`} title="Every provider response this analysis used; replay offline with `txstory replay <file>`">Download recording (.json)</a>}
           <label className="toggle"><input type="checkbox" checked={exact} onChange={(e) => setExact(e.target.checked)} /> Exact amounts</label>
         </div>
 
@@ -99,6 +104,7 @@ function StoryLoaded({ story, loadingFull, enrichError, focus, headingRef, onRet
           </p>
         )}
 
+        {before}
         <Interpretations />
         <Ledger />
         <Flow />

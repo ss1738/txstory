@@ -157,6 +157,17 @@ export interface NetworkDescriptor {
 }
 
 export function describeNetwork(key: ChainKey): NetworkDescriptor {
-  const c = getChain(key);
+  return networkDescriptor(getChain(key));
+}
+
+/** The descriptor of an explicit network definition (no registry lookup). */
+export function networkDescriptor(c: ChainInfo): NetworkDescriptor {
   return { key: c.key, chainId: c.chainId, name: c.name, nativeSymbol: c.nativeSymbol, explorerUi: c.explorerUi, builtin: c.builtin };
+}
+
+/** Whether two network definitions describe the same network in every field the analysis uses. */
+export function sameNetwork(a: ChainInfo, b: ChainInfo): boolean {
+  return a.key === b.key && a.chainId === b.chainId && a.name === b.name && a.nativeSymbol === b.nativeSymbol
+    && a.nativeDecimals === b.nativeDecimals && a.feeModel === b.feeModel && a.explorerUi === b.explorerUi
+    && a.wrappedNative.length === b.wrappedNative.length && a.wrappedNative.every((w, i) => w === b.wrappedNative[i]);
 }

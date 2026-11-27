@@ -4,7 +4,77 @@ Version numbers follow semantic versioning in spirit. During 0.x, any minor
 version may change the library surface. Serialized formats are versioned
 independently (see docs/formats.md).
 
-## 0.3.0: unreleased (prepared 2026-11-26)
+## 0.4.0: unreleased (prepared 2026-11-27)
+
+Developer-journey release: rebuild recordings in the browser, a static
+developer site, and a contributor path that is tested.
+
+**Added**
+
+- **Open a recording in the browser** (`/open`): a local file is read in the
+  page and the analysis is rebuilt with the same engine the CLI and server use.
+  The file is not uploaded, and rebuilding makes no network requests.
+- **Reconstruction report** (`reconstruct()`, `txstory replay`, the browser):
+  what a recording captured, requests it cannot answer, unused exchanges, the
+  recording and rebuilding engine versions, digest agreement, field differences
+  from an embedded story, and a plain explanation of the verdict. `txstory
+  replay --json` adds it as `report`; existing fields are unchanged.
+- **Static developer site** (`npm run build:site`, `npm run site:preview`):
+  examples rebuilt in the browser from the shipped recordings, recording import,
+  installation and usage commands, limitations, and project links. No server
+  and no provider credentials. A Content-Security-Policy limits the page to its
+  own origin. Not deployed by this project.
+- **Decode with ABI files** on a rebuilt recording in the browser, the
+  equivalent of `txstory replay --abi`. The report records the ABIs
+  (`userAbis`) and explains that they, not the evidence, changed the output.
+  Case: the devnet `customError` recording shows `unknown error selector
+  0xcf479181` until `fixtures/devnet/Demo.abi.json` is supplied, then
+  `InsufficientBalance(available="1000000000000000000", required="5")`.
+- **Get started page** whose commands are checked by a unit test that runs the
+  offline ones.
+- **Decoder example** `examples/decoder/split.ts`, tested against values read
+  from the anvil node.
+- **Library:** `parseRecording`, `reconstruct`, `RECONSTRUCTION_SCOPE` and the
+  report types are exported from `src/engine/index.ts`.
+
+**Changed**
+
+- The engine's replay path no longer imports Node built-ins, so it bundles for
+  browsers. SHA-256 now comes from `@noble/hashes` (already a dependency);
+  digests are identical, and every shipped recording still reproduces its
+  stored output digest.
+- Recording files are read and written by `src/engine/fixture-files.ts`.
+  `RecordedTransport` and `readRecording`/`writeRecording` moved there; the
+  library entry point still exports `readRecording` and `writeRecording`.
+- Recording validation is stricter: bounded structure depth, label and URL
+  lengths, endpoint counts, and `config` values within the environment bounds.
+  A recording without `recordedAt` reports it as `unknown`.
+- `txstory replay` text output adds an origin line, the rebuilding engine
+  version, and any requests the recording could not answer.
+- The README quick start uses `npm run -s txstory -- …` (the bare `txstory`
+  command is only available after `npm link`), and documents the kinds of data,
+  recordings, live provider requirements and the static site.
+- The Method page describes traces, ABI decoding and recordings accurately.
+- `decodeAbiString` returns null for non-hex input instead of decoding a
+  truncated prefix.
+
+**Fixed**
+
+- **Recordings of one custom network key no longer share a definition.**
+  Replay registered a recording's embedded network in the shared registry and
+  skipped it when the key was already known, so a second recording with the
+  same key but a different name, native symbol, chain id or fee model was
+  analysed with the first one's definition, and verdicts depended on which file
+  was opened first (CLI, server and browser). Each analysis now receives its
+  network definition explicitly (`AssembleOptions.network`, `BuildInput.network`);
+  replay uses the recording's own validated definition and does not write to
+  the registry. The server warns `recording-network-conflict` at startup when
+  two recordings define one key differently.
+- A broken link from `docs/configuration.md` to `.env.example`.
+- `docs/extending.md` referred to a Seaport test against explorer decoding that
+  is not in the public suite.
+
+## 0.3.0: released 2026-11-27 (prepared 2026-11-26)
 
 Developer release: one engine behind a browser UI, CLI, HTTP API and library.
 Licensed under the Apache License, Version 2.0 (Copyright 2026 Satyawan Singh).

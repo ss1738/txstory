@@ -9,7 +9,7 @@ import type {
 import { normalizeAddress, type Address } from '../../core/hex.js';
 import { parseDecimals } from '../../core/amounts.js';
 import type { SourceRecord } from '../../core/types.js';
-import { redactUrl } from '../config.js';
+import { redactUrl } from '../defaults.js';
 import { NOT_RECORDED, type Transport } from '../transport.js';
 import { arr, bool, get, intString, isObj, parseJson, str, type Json } from './json.js';
 

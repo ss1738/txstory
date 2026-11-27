@@ -11,7 +11,8 @@
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { engineConfigFromEnv, loadChainFile } from '../../src/engine/config.js';
-import { recordAnalysis, writeRecording } from '../../src/engine/recording.js';
+import { recordAnalysis } from '../../src/engine/recording.js';
+import { writeRecording } from '../../src/engine/fixture-files.js';
 import { LiveTransport } from '../../src/engine/transport.js';
 
 const PORT = 18545;

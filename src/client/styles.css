@@ -63,10 +63,10 @@ button, input, select { font: inherit; color: inherit; }
 .plain { list-style: none; padding: 0; margin: 0.5rem 0; }
 .plain li { padding: 4px 0; }
 
-.site-header { display: flex; justify-content: space-between; align-items: center; padding: 14px clamp(16px, 4vw, 48px); border-bottom: 1px solid var(--line); background: var(--surface); }
+.site-header { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; align-items: center; padding: 14px clamp(16px, 4vw, 48px); border-bottom: 1px solid var(--line); background: var(--surface); }
 .brand { font-weight: 800; font-size: 1.35rem; letter-spacing: -0.03em; color: var(--ink); text-decoration: none; }
 .brand span { font-weight: 400; color: var(--accent); }
-.site-header nav { display: flex; gap: 18px; }
+.site-header nav { display: flex; flex-wrap: wrap; gap: 6px 18px; }
 .site-header nav a { color: var(--ink-2); text-decoration: none; font-weight: 500; }
 .site-header nav a[aria-current='page'] { color: var(--accent); text-decoration: underline; }
 main { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px) 64px; }
@@ -235,6 +235,31 @@ tr.hl > td, tr.hl > th { background: var(--hl); }
 .prose { max-width: 760px; }
 .prose h1 { font-size: 2rem; margin: 0 0 12px; }
 .prose li { margin-bottom: 8px; }
+
+/* Links and labels styled as buttons */
+a.btn-primary, label.btn-primary, a.btn-ghost { display: inline-flex; align-items: center; text-decoration: none; }
+a.btn-primary, label.btn-primary { color: var(--accent-ink); }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+
+/* Open a recording */
+.dropzone { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 22px; margin: 16px 0; border: 2px dashed var(--line); border-radius: var(--radius); background: var(--surface); }
+.dropzone-active { border-color: var(--accent); background: var(--accent-soft); }
+.dropzone:has(input:focus-visible) label { outline: 3px solid var(--accent); outline-offset: 2px; }
+.reconstruction .panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.recon-kv > div { display: contents; }
+.reconstruction .notes { color: var(--ink-2); padding-left: 1.2rem; }
+.abi-row { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 6px; }
+.abi-row:has(input:focus-visible) label { outline: 3px solid var(--accent); outline-offset: 2px; }
+label.btn-ghost { display: inline-flex; align-items: center; cursor: pointer; }
+
+/* Get started */
+.toc ol { columns: 2; padding-left: 1.2rem; }
+.start section { scroll-margin-top: 16px; }
+.code-block { position: relative; display: flex; gap: 8px; align-items: flex-start; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+.code-block pre { flex: 1; margin: 0; overflow-x: auto; font-family: var(--mono); font-size: 0.86rem; white-space: pre; }
+.prose pre { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; overflow-x: auto; font-size: 0.86rem; }
+.prose code { font-family: var(--mono); font-size: 0.9em; }
+@media (max-width: 640px) { .toc ol { columns: 1; } }
 
 @media (max-width: 900px) {
   .flow-grid { grid-template-columns: 1fr; }

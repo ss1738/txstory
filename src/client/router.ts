@@ -5,12 +5,16 @@ export type Route =
   | { name: 'home' }
   | { name: 'story'; chain: ChainKey; hash: string; example: boolean; focus: string | null }
   | { name: 'about' }
+  | { name: 'open' }
+  | { name: 'start' }
   | { name: 'not-found'; path: string };
 
 export function parseRoute(location: Pick<Location, 'pathname' | 'search' | 'hash'>): Route {
   const path = location.pathname.replace(/\/+$/, '') || '/';
   if (path === '/') return { name: 'home' };
   if (path === '/about') return { name: 'about' };
+  if (path === '/open') return { name: 'open' };
+  if (path === '/start') return { name: 'start' };
   const m = /^\/(tx|example)\/([^/]+)\/(0x[0-9a-fA-F]{64})$/.exec(path);
   // Any well-formed network key: the server knows which networks exist (custom ones too).
   if (m && CHAIN_KEY_PATTERN.test(m[2]!)) {

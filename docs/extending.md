@@ -33,6 +33,19 @@ export const myProtocol: DecoderModule = {
 
 Then add it to `BUILTIN_DECODERS` in `src/core/decoders/index.ts`.
 
+**A runnable example.** `examples/decoder/split.ts` is a complete module for the
+`Split` event of the devnet contract (`examples/devnet/src/Demo.sol`). It runs
+offline against a devnet recording without being built in:
+
+```bash
+npx tsx examples/decoder/split.ts
+npx vitest run tests/unit/decoder-example.test.ts   # checks the decoded fields against values read from the anvil node
+```
+
+Copy it as a starting point. `decodeLogs(story, libraryFor([...BUILTIN_DECODERS, myModule]))`
+and `runInterpreters(story, logs, [myModule])` are the same calls the engine
+makes for built-in modules.
+
 What the framework guarantees:
 
 1. **Recognition.** Your ABI joins the built-in library (source `builtin`,
@@ -64,13 +77,7 @@ What the framework guarantees:
 - Use `heuristic` for anything inferred from patterns rather than decoded fields.
 
 **Test against independent expected values.** Your own decoder isn't evidence;
-test it against something outside TxStory. Recorded fixtures often contain
-Blockscout's own decoding of the same log (`/logs` items have
-`decoded.parameters`, plus the verified ABI item). See the Seaport test in
-`tests/unit/engine.test.ts`, which checks the interpretation against
-Blockscout's decoded offerer and recipient.
-
-Other independent sources:
+test it against something outside TxStory. Independent sources:
 
 - `cast` (Foundry): encode calldata and events with `cast calldata` or
   `cast abi-encode`, as in `scripts/gen-abi-vectors.mjs` and

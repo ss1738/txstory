@@ -6,7 +6,8 @@ import { chainKeys, getChain, isChainKey, type ChainKey } from '../core/chains.j
 import { isTxHash } from '../core/hex.js';
 import { assembleStory, type StoryResult } from '../engine/analyze.js';
 import { recordingEndpoints, type ServerConfig } from './config.js';
-import { CachingTransport, FIXTURE_SCHEMA_V1, FIXTURE_SCHEMA_V2, FIXTURE_SCHEMA_V3, LiveTransport, RECORDING_FILE_NAME, RecordedTransport, type FixtureFile, type Transport } from '../engine/transport.js';
+import { CachingTransport, FIXTURE_SCHEMA_V1, FIXTURE_SCHEMA_V2, FIXTURE_SCHEMA_V3, LiveTransport, RECORDING_FILE_NAME, type FixtureFile, type Transport } from '../engine/transport.js';
+import { RecordedTransport } from '../engine/fixture-files.js';
 import type { AssembleOptions } from '../engine/analyze.js';
 import { resolveClient } from './clientIp.js';
 import { recordAnalysis, registerRecordingNetwork, replayRecording, validateRecording, type Recording } from '../engine/recording.js';
@@ -90,7 +91,11 @@ export function createApp(deps: AppDeps): App {
     }
     for (const name of names) {
       try {
-        registerRecordingNetwork(validateRecording(JSON.parse(readFileSync(join(dir, name), 'utf8'))));
+        const rec = validateRecording(JSON.parse(readFileSync(join(dir, name), 'utf8')));
+        // Each replay uses its recording's own network definition; this only makes the key routable.
+        if (registerRecordingNetwork(rec) === 'conflict') {
+          warn({ event: 'recording-network-conflict', file: name, network: rec.chain, reason: 'another recording defines this network key differently; each recording is still analysed with its own definition' });
+        }
       } catch (err) {
         warn({ event: 'recording-rejected', file: name, reason: err instanceof Error ? err.message.slice(0, 200) : 'invalid' });
       }

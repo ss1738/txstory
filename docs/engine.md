@@ -42,7 +42,7 @@ test doubles.
 ## Reproduce
 
 ```ts
-import { recordAnalysis, writeRecording, readRecording, replayRecording, checkReplay } from './src/engine/index.js';
+import { recordAnalysis, writeRecording, readRecording, replayRecording, checkReplay, reconstruct } from './src/engine/index.js';
 
 const { result, recording } = await recordAnalysis('ethereum', hash, transport, config, { embedStory: false });
 await writeRecording('tx.json', recording);
@@ -50,7 +50,15 @@ await writeRecording('tx.json', recording);
 const rec = await readRecording('tx.json');             // validated, size-bounded
 const replayed = await replayRecording(rec, config);   // offline; never uses the network
 checkReplay(rec, replayed);                            // { sameEvidence, sameOutput, … }
+
+const { report } = await reconstruct(rec, config);     // the same, plus what is missing and what a mismatch means
 ```
+
+`readRecording` and `writeRecording` use the file system (Node). Everything
+else on this path is browser-safe: `parseRecording(text)` validates recording
+text, and `reconstruct` runs in a browser bundle, which is how the web UI's
+"Open recording" works. The report format is in
+[formats.md](formats.md#reconstruction-report).
 
 ## Compare
 

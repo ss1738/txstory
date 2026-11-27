@@ -1,4 +1,4 @@
-import { describeNetwork, getChain } from './chains.js';
+import { networkDescriptor } from './chains.js';
 import { toBigInt } from './amounts.js';
 import { decodeLog, decodeTransferBatch, TOPICS, type DecodedEvent } from './events.js';
 import { normalizeAddress, ZERO_ADDRESS, type Address, type Hex } from './hex.js';
@@ -20,7 +20,8 @@ const SEQ = { topValue: 0, log: 1_000, internal: 10_000_000, fee: 20_000_000 } a
 export class BuildError extends Error {}
 
 export function buildStory(input: BuildInput): Story {
-  const chain = getChain(input.chain);
+  if (input.network.key !== input.chain) throw new Error(`network definition "${input.network.key}" does not match the analysed network "${input.chain}"`);
+  const chain = input.network;
   const { tx, receipt, block, sourceIds } = input.rpc;
   const warnings: string[] = [];
 
@@ -300,7 +301,7 @@ export function buildStory(input: BuildInput): Story {
   const story: Story = {
     schemaVersion: STORY_SCHEMA_VERSION,
     chain: input.chain,
-    network: describeNetwork(input.chain),
+    network: networkDescriptor(input.network),
     hash: tx.hash.toLowerCase() as Hex,
     outcome: success ? 'success' : 'reverted',
     tx: {

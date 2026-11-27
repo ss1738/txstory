@@ -1,132 +1,91 @@
-# Release 0.3.0: final state and publication plan
+# Releases
 
-Status on 2026-11-27:
+## 0.4.0: prepared, not published
 
-- **Licensed** under the Apache License, Version 2.0, Copyright 2026 Satyawan
-  Singh, as approved by the owner.
-- **The release tree is validated** from a clean export.
-- **A fresh local repository** is prepared from that tree, with new history.
-  The original development repository and its history are preserved unchanged.
-- **Not done:** no remote repository has been created, nothing has been pushed,
-  tagged publicly, published or deployed.
+Status on 2026-11-27: committed on the local branch
+`feature/0.4-developer-journey`. Not pushed, merged, tagged or deployed.
 
-## Decisions still needed before publication
+### What it adds
 
-1. **GitHub owner and repository name.** More than one GitHub account is
-   logged in on the development machine, so the owner account (or
-   organisation) must be chosen explicitly. The proposed name is `txstory`.
-2. **Commit email.** The public commit should use that account's GitHub
-   `noreply` address. GitHub could not provide it automatically, because the
-   CLI token lacks the `user` scope. It must come from the owner, or from
-   `gh auth refresh -h github.com -s user` followed by `gh api user/emails`. It
-   is never constructed.
+See CHANGELOG.md for the full list. In short:
 
-## Requirement checklist
+- the browser rebuilds a local recording with the shared engine ("Open
+  recording"), optionally with user-supplied ABI files, and shows a
+  reconstruction report;
+- a static developer site (`npm run build:site`) that rebuilds the shipped
+  examples in the browser and documents installation and use;
+- a tested getting-started path, a runnable decoder example, and contributor
+  documentation for focused tests, fixture regeneration and compatibility.
 
-| Requirement | Status | Evidence |
-|---|---|---|
-| Apache-2.0 license and NOTICE | Done | `LICENSE` is the verbatim text from https://www.apache.org/licenses/LICENSE-2.0.txt (sha256 `cfc7749b…3d30`, matching Playwright's bundled copy apart from its own appendix line); `NOTICE`; `package.json` and lockfile root `"license": "Apache-2.0"`; SPDX in `examples/devnet/src/Demo.sol`; OpenAPI `info.license`; README, CONTRIBUTING, DATA_PROVENANCE, CHANGELOG |
-| Redistribution terms of captured responses investigated | Done; unresolved, so excluded | DATA_PROVENANCE.md, primary sources with dates |
-| Public-safe example data, accurately labelled | Done | 15 `synthetic` and 6 `local-devnet` recordings, checked file by file in the clean export |
-| Captured recordings preserved privately | Done | Kept outside both repositories. `npm run test:captured` passes against them (43 tests). |
-| Tree and history review | Done | VERIFICATION.md. The fresh repository has no prior history. |
-| Documentation matches the implementation | Done | API and CLI documentation examples run as tests |
-| Security policy distinguishes planned from enabled reporting | Done | SECURITY.md; enabling it is a publication step |
-| Clean-export verification | Done | See below |
-| CI on GitHub's runners | Not yet possible | Runs on first push |
+### Validation (MEASURED, implementer validation, not an independent review)
 
-## Final checks from a clean export (MEASURED)
-
-These checks ran on a `git archive` export of the release commit into an empty
-directory, under `env -i PATH HOME`, with Node 22.19.0 and npm 11.12.1. The
-export contains no `.git`, `node_modules`, build output, ignored files or
-private material.
+Run on 2026-11-27 on macOS with Node 22.19.0 and npm 11.12.1. The build,
+`npm test` and browser rows were rerun in the working tree after the network
+isolation fix; the rest come from a `git archive` export of the branch into an empty directory under
+`env -i PATH HOME`. The export has no `.git`, `node_modules`, build output,
+ignored files or private material.
 
 | Check | Result |
 |---|---|
 | `npm ci`; `npm audit --omit=dev` | Installed from the lockfile; 0 vulnerabilities |
 | `npm run build` (both typechecks, client, node) | Passed |
-| `npm test` | 204 passed (11 files) |
-| `npm run test:e2e` with installed Chrome; with `TXSTORY_E2E_BROWSER=chromium` (the CI setting) | 21 passed in each |
-| CLI `help` and `--version`; library example | Correct output; the example ran offline |
+| `npm test` | 232 passed (15 files) |
+| `npm run test:e2e`, installed Chrome and `TXSTORY_E2E_BROWSER=chromium` | 40 passed in each (22 server journeys, 18 static site) |
+| Offline replay of every shipped recording with outbound network denied (`sandbox-exec`) | 20 of 21 reproduce both digests with nothing missing; the pending case reproduces its "no story" result (exit 3) |
+| README quick start, library example and decoder example, network denied | Ran; output as documented |
+| Static site served by `python3 -m http.server`, driven in Chrome | Example rebuilt, local file opened, Get started shown; 0 requests to other origins, 0 page errors |
+| Static site contents | App, CSP-tagged `index.html` and `404.html`, 21 recordings (15 synthetic, 6 local-devnet) |
+| Synthetic recordings regenerated | Identical to the committed files (after regenerating for 0.4.0, which only changes `engine.version`) |
+| Container built from the export; the CI container step run verbatim | Exit 0 |
 | THIRD_PARTY_NOTICES.md vs generator | No difference |
-| Synthetic recordings regenerated | Byte-identical |
-| Offline replay of all 21 recordings with outbound network blocked (`sandbox-exec`) | 20 reproduce the same evidence and the same output digest; the pending case reproduces its recorded "pending" result (exit 3) |
-| Study scripts | Scorer self-test passed; the answer-key check refuses cleanly (exit 2) without the private recordings |
-| Captured suite without its directory | Fails with an explanation, as designed |
-| Container from the export | 241 MB; uid 1000; `/app` has `LICENSE`, `NOTICE`, `THIRD_PARTY_NOTICES.md`, the build, `fixtures/{synthetic,devnet}`, production `node_modules`; no study, test, `.env`, `.git` or captured files; 21 examples (15 synthetic, 6 local-devnet); 0 startup warnings; `docker stop` exits 0 |
+| `gitleaks detect` over all history | No leaks |
+| Relative links and anchors in Markdown | None broken |
+| Opt-in captured suite against the private recordings, network denied, archive write-protected | 43 passed; archive checksums unchanged |
 
-This is implementer validation, not an independent review.
+Limits:
 
-## Remaining limitations
+- GitHub Actions has not run this branch. A local run is not a GitHub run.
+- A model walkthrough found the first-use friction fixed here. That is not a
+  usability study; human usability remains unmeasured.
+- Traces were tested only via dRPC and a local anvil node.
 
-- **GitHub Actions has not run** on GitHub's runners.
-- **No captured real-provider data** is in the repository. The study's TxStory
-  condition needs the private recordings, or live mode (study/README.md).
-- **Traces were tested** only via dRPC and a local anvil node. They were not
-  tested against Geth, Reth or Erigon endpoints.
-- **Trust.** TxStory trusts the RPC nodes and explorers it queries. Nothing is
-  cryptographically verified.
-- **Human usability** has not been measured.
+### Publication steps awaiting authorization
 
-## Publication commands (each needs explicit owner authorization)
+1. Push `feature/0.4-developer-journey` and open a pull request to `main`;
+   wait for the four required checks.
+2. After merge: `git tag -a v0.4.0 -m "TxStory 0.4.0"`, push the tag, and
+   create the GitHub release from the notes below.
+3. Optional, separately decided: deploy `dist/site` to a static host that
+   serves `404.html` for unknown paths. Nothing is deployed today.
 
-The fresh repository is prepared locally with one commit on `main`. With the
-chosen owner (`<owner>`) and the GitHub account that owns it:
+### Release notes (draft)
 
-```bash
-cd <fresh repository path>
-gh repo create <owner>/txstory --public \
-  --description "Explain EVM transactions with evidence: browser UI, CLI, HTTP API and TypeScript library on one engine. Read-only, self-hostable." \
-  --source . --remote origin --push
-git tag -a v0.3.0 -m "TxStory 0.3.0"
-git push origin v0.3.0
-gh release create v0.3.0 --title "TxStory 0.3.0" --notes-file <file with the release notes below>
-```
+TxStory 0.4.0 makes recordings usable outside the command line. The browser
+can open a recording file, rebuild its analysis with the same engine the CLI
+uses, and report what was captured, what is missing, which engine versions were
+involved, and whether the result matches the digests stored in the file. ABI
+files can be added to decode custom errors and calls. The file is read in the
+page and is not uploaded.
 
-GitHub settings after creation:
+A static developer site (`npm run build:site`) rebuilds the bundled devnet and
+synthetic examples in the browser and documents installation, the CLI, the
+HTTP API, the library and extension. It needs no server and no provider
+credentials.
 
-- **Code security:**
-  - enable private vulnerability reporting;
-  - enable Dependabot alerts and Dependabot security updates;
-  - enable secret scanning and push protection where available.
-- **Actions:** set the default workflow permissions to "Read repository contents
-  permission".
-- **Branch protection for `main`:**
-  - require pull requests;
-  - block force pushes and deletion;
-  - require the four checks from `.github/workflows/ci.yml`:
-    - `typecheck, build, unit/integration, CLI, docs examples, study kit`
-    - `browser journeys (Playwright, recorded mode)`
-    - `secret scan (full history)`
-    - `container from source (build, run, inspect; nothing is pushed)`
-- **First CI run:** watch it on the first push before announcing anything.
+Rebuilding reruns the analysis on recorded responses. It does not re-execute
+EVM code and does not verify chain history. Human usability has not been
+measured. See CHANGELOG.md.
 
-**Not planned:** npm publication (`"private": true` stays), a container registry
-push, a hosted demo, deployment.
+## 0.3.0: published 2026-11-27
 
-## Release notes (draft)
-
-TxStory 0.3.0 is the first public developer release, licensed under Apache-2.0.
-One analysis engine powers a browser UI, the `txstory` CLI, an HTTP API with an
-OpenAPI contract, and a TypeScript library entry point.
-
-It explains what an EVM transaction did, with evidence for each claim and
-explicit flags where data is partial:
-
-- call traces, with rolled-back transfers excluded;
-- ABI decoding of calldata, logs and revert data, with provenance and reported
-  ambiguity;
-- decoder modules for extension;
-- custom networks from data files;
-- recordings that replay offline and report whether evidence and output are
-  identical;
-- comparison that explains differences.
-
-It runs self-hosted with your own RPC endpoints. Third-party providers are
-optional. The bundled examples are local devnet executions and labelled
-synthetic cases; recordings of public providers are not included.
-
-TxStory trusts the RPC nodes and explorers it queries and does not
-cryptographically verify anything. Human usability has not been measured. See
-README "Known limitations" and CHANGELOG.md.
+- Repository `ss1738/txstory` created and pushed by its owner's account; tag
+  `v0.3.0` on commit `7e441c5`, with a GitHub release.
+- The first CI run failed in the container job, which requested a captured
+  example no longer shipped. Fixed in `7e441c5`; all four checks then passed on
+  GitHub.
+- Settings applied: private vulnerability reporting, Dependabot alerts and
+  security updates, secret scanning with push protection, read-only default
+  workflow permissions, and branch protection on `main` (pull requests and the
+  four checks required, no force pushes or deletion).
+- Not published: no npm package (`"private": true`), no container image, no
+  hosted site.

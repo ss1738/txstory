@@ -52,7 +52,7 @@ generator (`scripts/synthetic-fixtures.ts`).
 | `endpoints` | The RPC and explorer URLs used, **redacted**. Replay issues requests to these same strings. |
 | `options` | `{trace}`. v1/v2 recordings have no traces, so replay uses `off`. |
 | `config` | `{maxExplorerPages, maxTokenMetadataCalls, explorerApiKeyUsed}`. The key itself is never stored. |
-| `network` | The network definition, for custom networks (validated on read) |
+| `network` | The network definition, for custom networks (validated on read). Replay analyses the recording with exactly this definition, independently of other recordings and of networks registered under the same key. |
 | `exchanges` | Keyed by request digest: `{kind, provider, method, url (redacted), body, httpStatus, retrievedAt, failure?, text}`. `text` is the **full response body**. |
 | `output` | `{stage, kind, storySha256, evidenceSha256, story?}`. `story` is present only with `--embed-story`, or from `/api/recording`. |
 
@@ -70,11 +70,54 @@ What it excludes:
 - the local environment;
 - anything not requested by the analysis.
 
-Bounds and failure behaviour:
+Bounds and failure behaviour (`parseRecording`, used by `readRecording`, the
+CLI, the server and the browser):
 
-- `readRecording` rejects files over 64 MiB, unknown schemas, malformed
-  exchanges, and redefinitions of built-in networks.
-- Replay never uses the network.
+- rejects files over 64 MiB, text that is not JSON, unknown schemas, malformed
+  exchanges and redefinitions of built-in networks;
+- rejects structure nested deeper than 64 levels (response bodies are strings
+  and are not counted), labels over 2,000 characters, URLs over 2,048
+  characters, more than 20 RPC endpoints and more than 10,000 exchanges;
+- rejects `config` values outside the bounds of the matching environment
+  settings (`maxExplorerPages` 1 to 50, `maxTokenMetadataCalls` 0 to 200), so a
+  recording cannot request unbounded work;
+- treats URLs in a recording as data. Replay never uses the network: a request
+  the recording cannot answer fails as "not present in the recording";
+- a missing `recordedAt` is reported as `unknown`, not invented.
+
+### Reconstruction report
+
+`reconstruct()` (`src/engine/reconstruct.ts`) rebuilds a recording and returns
+a report. `txstory replay --json` includes it as `report`, and the browser's
+"Open recording" page shows it.
+
+| Field | Meaning |
+|---|---|
+| `recording` | What the file holds: schema, network, hash, origin, description, `recordedAt`, recorder, engine version and story schema at recording time, exchange counts by kind, providers, recorded stage and result kind, whether it embeds the story |
+| `engine` | The engine version and story schema that rebuilt it |
+| `userAbis` | ABIs supplied for this rebuild (`--abi`, or "Decode with ABI files" in the browser), with entry counts. They are not part of the recording, so they can change the output digest while the evidence stays the same; the notes say so. |
+| `verdict` | `reproduced` (both digests equal), `differs` (at least one differs), `no-digest` (nothing stored to compare with), `no-story` (the responses do not produce a story, for example a pending transaction) |
+| `check` | `sameEvidence`, `sameOutput`, the recorded and rebuilt output digests |
+| `missing` | Requests the analysis made that the recording cannot answer |
+| `unusedExchanges` | Recorded responses the analysis did not request (expected across engine versions) |
+| `differences` | Field-level comparison with the embedded story, when there is one and the output differs |
+| `notes` | Plain-English explanation of the verdict and how to investigate it |
+
+Reconstruction reruns TxStory's analysis on the recorded responses. It does not
+re-execute EVM code and does not verify chain history: the responses are trusted
+as recorded. A `reproduced` verdict shows determinism over those responses, not
+that they are true.
+
+Investigating `differs`:
+
+1. Compare engine versions in the report. A different version that changed the
+   analysis is the usual cause.
+2. If `sameEvidence` is false, the analysis read different responses: the file
+   was edited, or the engine now requests different data (see `missing` and
+   `unusedExchanges`).
+3. With an embedded story (`record --embed-story`, or `/api/recording`),
+   `differences` lists each changed field. Without one, compare two
+   `txstory explain --json` outputs with `txstory compare`.
 
 ## Evidence bundle (`formatVersion` 2)
 

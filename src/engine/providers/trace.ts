@@ -4,7 +4,7 @@
  * is tried in order and the reason for every skip is recorded.
  */
 import type { SourceRecord } from '../../core/types.js';
-import { redactUrl, type RpcEndpoint } from '../config.js';
+import { redactUrl, type RpcEndpoint } from '../defaults.js';
 import type { Transport } from '../transport.js';
 import { parseJson } from './json.js';
 

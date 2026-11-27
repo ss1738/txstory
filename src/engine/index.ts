@@ -17,7 +17,9 @@ export { engineConfigFromEnv, loadChainFile, endpointsFor, redactUrl, ENGINE_VER
 export { LiveTransport, CachingTransport, type Transport, type TransportRequest, type TransportResponse } from './transport.js';
 
 // Reproducibility
-export { recordAnalysis, readRecording, validateRecording, writeRecording, replayRecording, checkReplay, storyDigest, evidenceDigest, normalizedStory, RECORDING_SCHEMA_V3, type Recording, type ReplayCheck } from './recording.js';
+export { recordAnalysis, parseRecording, validateRecording, replayRecording, checkReplay, storyDigest, evidenceDigest, normalizedStory, RECORDING_SCHEMA_V3, type Recording, type ReplayCheck } from './recording.js';
+export { readRecording, writeRecording } from './fixture-files.js';
+export { reconstruct, RECONSTRUCTION_SCOPE, type ReconstructionReport, type ReconstructionVerdict } from './reconstruct.js';
 
 // Pure domain (also usable in browsers)
 export { compareStories, type Comparison, type Difference } from '../core/compare.js';
