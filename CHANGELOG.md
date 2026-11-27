@@ -9,17 +9,30 @@ independently (see docs/formats.md).
 **Fixed**
 
 - **RPC fallback on node limits.** A JSON-RPC error that describes the
-  answering node (pruned history, an unsupported method, a rate limit) now moves
-  on to the next configured endpoint instead of ending the analysis. Errors about
+  answering node (codes -32601 and -32005, "pruned history", Geth's "does not
+  exist/is not available") now moves on to the next configured endpoint instead
+  of ending the analysis. Errors about
   the request itself, such as a reverted `eth_call`, still stop immediately.
   Found when PublicNode answered a block request with "pruned history
   unavailable" while other default endpoints were configured.
-- **`replay --abi` no longer reports failure for the result it was asked for.**
-  When the evidence is identical and only the output changed because of the
-  supplied ABIs, the reconstruction report sets `differsOnlyByUserAbis`, the
-  CLI exits 0 (`ok: true` in `--json`), the browser shows "Decoded with your
-  ABIs", and the generic "cannot list differences" note is no longer shown. A
-  recording whose evidence changed still exits 1 with or without `--abi`.
+- **`replay --abi` no longer reports failure for the result it was asked for,
+  and never excuses another difference.** With user ABIs, the recording is also
+  rebuilt without them; the report adds `withoutUserAbis` (does the original
+  output still reproduce?) and `userAbisChangedOutput` (did the ABIs change any
+  decoding?). `differsOnlyByUserAbis` is true only when the evidence is the
+  same and the rebuild without ABIs reproduces both stored digests; then the
+  CLI exits 0 and the browser shows "Decoded with your ABIs". Changed evidence,
+  an already mismatching stored output, or a changed recorded stage still exit 1.
+- **Not-found and pending results say when they are inconclusive.** A null
+  answer from one endpoint is still reported, but the message now names the
+  endpoint and lists configured endpoints that could not answer.
+- **Credentials in shareable output.** Configured endpoints other than the
+  built-in public, loopback and `.invalid` ones are withheld from stories,
+  recordings, evidence exports, API responses and CLI output
+  (`https://rpc-<n>.withheld.invalid/`), and known credential fragments are
+  removed from provider error text before analysis and recording. Previously
+  short path tokens, hostname tokens and secrets echoed in provider errors could
+  appear. Default, synthetic and devnet recordings are unchanged.
 - After `record`, the CLI suggests the replay command in the form it was started
   with (`npm run -s txstory --` from a clone).
 

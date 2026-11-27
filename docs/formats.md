@@ -28,7 +28,7 @@ numbers, gas) are **decimal strings**, so no precision is lost.
 | `revert` | `null`, or `{source: "trace", frameId, data, decoded, summary}` for a failed top-level call |
 | `abiDecoding` | Libraries used (label, source, entries), calldata decoding, logs whose topic 0 matched, and the count of unmatched logs. Decodings: `{status, id, candidates: [{signature, sources[], ok, params?, error?, notes[]}]}`. Long values are shortened; full raw data stays in `logs` and `trace`. |
 | `warnings` | Human-readable caveats (partial data, rolled-back transfers, disagreements) |
-| `sources` | Every request: provider, redacted URL, method, status, HTTP status, retrievedAt, sha256, note |
+| `sources` | Every request: provider, shareable URL (see [Provider URLs in shareable output](configuration.md#provider-urls-in-shareable-output)), method, status, HTTP status, retrievedAt, sha256, note |
 | `generatedAt`, `mode`, `stage` | Build time; `live`, `recorded`, `synthetic` or `mixed`; `fast` or `full` |
 
 **History:**
@@ -49,11 +49,11 @@ generator (`scripts/synthetic-fixtures.ts`).
 | `chain`, `hash`, `description`, `recordedAt`, `recorder` | Identity |
 | `origin` | `captured` (real providers; the default when absent), `local-devnet` (a node you ran), or `synthetic` (generated responses, not real provider data). Replay of a synthetic recording marks every source and the story `synthetic`. |
 | `engine` | `{name, version, storySchema}` at recording time |
-| `endpoints` | The RPC and explorer URLs used, **redacted**. Replay issues requests to these same strings. |
+| `endpoints` | The RPC and explorer URLs used, in shareable form: built-in public, loopback and `.invalid` URLs as they are, other configured endpoints withheld (`https://rpc-<n>.withheld.invalid/`). Replay issues requests to these same strings. |
 | `options` | `{trace}`. v1/v2 recordings have no traces, so replay uses `off`. |
 | `config` | `{maxExplorerPages, maxTokenMetadataCalls, explorerApiKeyUsed}`. The key itself is never stored. |
 | `network` | The network definition, for custom networks (validated on read). Replay analyses the recording with exactly this definition, independently of other recordings and of networks registered under the same key. |
-| `exchanges` | Keyed by request digest: `{kind, provider, method, url (redacted), body, httpStatus, retrievedAt, failure?, text}`. `text` is the **full response body**. |
+| `exchanges` | Keyed by request digest: `{kind, provider, method, url (shareable form), body, httpStatus, retrievedAt, failure?, text}`. `text` is the **full response body**; error bodies have known credential fragments replaced with `REDACTED`. |
 | `output` | `{stage, kind, storySha256, evidenceSha256, story?}`. `story` is present only with `--embed-story`, or from `/api/recording`. |
 
 What a recording is enough for:
@@ -66,7 +66,9 @@ What a recording is enough for:
 
 What it excludes:
 
-- credentials (URLs are redacted, and the API key is reduced to a boolean);
+- configured endpoint URLs other than built-in public, loopback and `.invalid`
+  ones (withheld; see [Provider URLs in shareable output](configuration.md#provider-urls-in-shareable-output)),
+  and the explorer API key (reduced to a boolean);
 - the local environment;
 - anything not requested by the analysis.
 
@@ -95,7 +97,9 @@ a report. `txstory replay --json` includes it as `report`, and the browser's
 |---|---|
 | `recording` | What the file holds: schema, network, hash, origin, description, `recordedAt`, recorder, engine version and story schema at recording time, exchange counts by kind, providers, recorded stage and result kind, whether it embeds the story |
 | `engine` | The engine version and story schema that rebuilt it |
-| `differsOnlyByUserAbis` | `true` when the verdict is `differs` only because of `userAbis`: the evidence digest is the same and only the output changed. `txstory replay` then exits 0, and the browser shows "Decoded with your ABIs". |
+| `withoutUserAbis` | With user ABIs only: the same recording rebuilt without them, compared with the stored digests (`sameEvidence`, `sameOutput`, `replayDigest`). This is the answer to "does the original output still reproduce?" |
+| `userAbisChangedOutput` | With user ABIs only: whether they changed any decoding or interpretation. Listing a supplied ABI among the ABI sources does not count. |
+| `differsOnlyByUserAbis` | `true` only when the verdict is `differs`, the evidence is the same, and `withoutUserAbis` reproduces both stored digests. The difference is then the requested reinterpretation: `txstory replay` exits 0 and the browser shows "Decoded with your ABIs". Any other difference, including one that also occurs without the ABIs, stays a failure. |
 | `userAbis` | ABIs supplied for this rebuild (`--abi`, or "Decode with ABI files" in the browser), with entry counts. They are not part of the recording, so they can change the output digest while the evidence stays the same; the notes say so. |
 | `verdict` | `reproduced` (both digests equal), `differs` (at least one differs), `no-digest` (nothing stored to compare with), `no-story` (the responses do not produce a story, for example a pending transaction) |
 | `check` | `sameEvidence`, `sameOutput`, the recorded and rebuilt output digests |

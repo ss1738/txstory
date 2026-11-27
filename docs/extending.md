@@ -143,4 +143,5 @@ a plain transfer, a token transfer and a failed transaction as fixtures.
 - **Transport:** to route requests through your own infrastructure
   (authentication proxy, request pool, cache), implement `Transport.send`. The
   engine passes per-request timeouts, and you must not log full URLs (use
-  `redactUrl`).
+  `shareableUrlMapper` from `src/engine/defaults.ts`; see
+  [Provider URLs in shareable output](configuration.md#provider-urls-in-shareable-output)).

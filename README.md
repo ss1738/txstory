@@ -111,8 +111,11 @@ repository, because their redistribution terms are unresolved (see
 
 ## Recordings: capture, share, rebuild
 
-A recording holds every provider response one analysis used, with credentials
-removed from URLs, plus digests of the evidence and of the result.
+A recording holds every provider response one analysis used, plus digests of
+the evidence and of the result. Endpoints you configure are withheld from it
+(see [Provider URLs in shareable output](docs/configuration.md#provider-urls-in-shareable-output));
+check a recording before sharing it, because provider responses are stored as
+received.
 
 ```bash
 npm run -s txstory -- record ethereum 0x<hash> -o tx.json   # live analysis, saved
@@ -194,7 +197,8 @@ The CLI keeps its output scriptable:
 - errors go to stderr;
 - exit codes are stable (`0` ok, `1` incomplete or different, `2` usage,
   `3` not found or pending, `4` providers down, `5` bad input file);
-- URLs are always redacted.
+- configured provider URLs are withheld; only built-in public, loopback and
+  `.invalid` URLs are printed.
 
 **HTTP API** ([docs/api.md](docs/api.md); contract at `GET /api/openapi.json`):
 

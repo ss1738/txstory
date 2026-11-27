@@ -46,9 +46,42 @@ All settings are optional environment variables. See [.env.example](../.env.exam
   address spraying cannot reset limits that are already being tracked.
 - **Topology examples:** see `DEPLOYMENT.md`.
 
-Credentials can live in RPC URLs. Every URL is passed through `redactUrl` before it
-is stored in a source record, an export or a log line. API keys stay on the server
-and never reach the browser.
+Credentials can live in RPC URLs. API keys stay on the server and never reach
+the browser.
+
+### Provider URLs in shareable output
+
+Stories, recordings, evidence exports, HTTP API responses, CLI output and the
+browser show a provider URL only when it is known not to carry a credential:
+
+- the built-in public endpoints (the defaults listed in the README);
+- loopback hosts (`localhost`, `127.0.0.1`, `::1`);
+- the reserved `.invalid` domain (synthetic data and withheld placeholders).
+
+Every other endpoint you configure (`TXSTORY_RPC_<NETWORK>`, `--rpc`,
+`TXSTORY_EXPLORER_<NETWORK>`, `--explorer`, chain files) is **withheld**: it
+appears as `https://rpc-<n>.withheld.invalid/` (its position in the endpoint
+list) or `https://explorer.withheld.invalid/<request path>`, with its provider
+label (for example `custom RPC 1`). This does not depend on guessing which part
+of a URL is secret. Withheld forms also serve as the request identifiers in new
+recordings, so those recordings rebuild offline without the real URLs.
+
+Omitted on purpose: the real host, path and query of withheld endpoints. A
+reader of a shared recording learns which position and label answered each
+request, not which provider or account it was.
+
+Provider error text can echo a URL or key. Before an error response (a non-2xx
+status, a transport failure, or a JSON-RPC `error`) is analysed or recorded,
+fragments of withheld endpoint URLs and the explorer API key are replaced with
+`REDACTED`: userinfo, path segments, query values and host labels other than
+the last two, when they have at least 6 characters including a digit or at
+least 16 characters. Successful responses are not changed.
+
+Limits: a secret shorter than those thresholds can survive in echoed error
+text; successful response bodies are recorded as received; and nothing makes
+an arbitrary provider response or a file you supply safe to share. Check a
+recording before sharing it. Recordings made before this change keep the URLs
+they were written with.
 
 ## Engine, CLI and analysis settings
 

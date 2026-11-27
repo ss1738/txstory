@@ -21,10 +21,11 @@ an independent reference, such as node state or `cast` output, if you have one.
 - a shipped example (`fixtures/synthetic/` or `fixtures/devnet/`) that shows it;
 - a recording made with
   `npm run -s txstory -- record <network> <hash> -o tx.json --embed-story`,
-  after checking it holds no credentials (URLs are redacted, but redaction is a
-  heuristic) and that you may share the provider responses in it;
+  after checking it before sharing: configured endpoint URLs are withheld, but
+  provider responses are stored as received, and you must be allowed to share
+  them;
 - otherwise the network and the public transaction hash.
 
-**Providers**: the output of `npm run -s txstory -- networks` (endpoints are
-printed redacted; check before pasting), and any provider errors or
+**Providers**: the output of `npm run -s txstory -- networks` (configured
+endpoints are printed withheld), and any provider errors or
 `unavailable` or `partial` flags shown in the story's Sources or Completeness.

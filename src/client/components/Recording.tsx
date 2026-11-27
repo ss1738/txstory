@@ -167,6 +167,7 @@ export function ReconstructionPanel({ report, sourceLabel, onReset, abi }: { rep
         <div><dt>Captured</dt><dd>{r.exchanges.total} responses ({r.exchanges.rpc} RPC, {r.exchanges.explorer} explorer){r.providers.length ? ` from ${r.providers.join(', ')}` : ''}</dd></div>
         <div><dt>Engine</dt><dd>recorded with {r.engineVersion ? `TxStory ${r.engineVersion}` : 'an unknown version'}; rebuilt with TxStory {report.engine.version} (story schema {report.engine.storySchema})</dd></div>
         <div><dt>Evidence digest</dt><dd>{yesNo(report.check.sameEvidence)}</dd></div>
+        {report.withoutUserAbis && <div><dt>Without your ABIs</dt><dd>original output {yesNo(report.withoutUserAbis.sameOutput)}; your ABIs {report.userAbisChangedOutput ? 'changed' : 'did not change'} the output</dd></div>}
         <div><dt>Output digest</dt><dd>{yesNo(report.check.sameOutput)}{report.check.recordedDigest ? <span className="mono small muted wrap"> · recorded {report.check.recordedDigest.slice(0, 16)}…{report.check.replayDigest ? `, rebuilt ${report.check.replayDigest.slice(0, 16)}…` : ''}</span> : null}</dd></div>
       </dl>
       {report.missing.length > 0 && (

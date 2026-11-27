@@ -153,6 +153,83 @@ export function networkName(chain: ChainKey): string {
 }
 
 /**
+ * Shareable provider URLs.
+ *
+ * Provenance in stories, recordings, exports, API responses and CLI output
+ * shows a provider URL only when it is known not to carry a credential:
+ * the built-in public endpoints, loopback hosts, and the reserved `.invalid`
+ * domain (synthetic data and withheld placeholders). Any other configured
+ * endpoint is withheld and shown as `https://rpc-<n>.withheld.invalid/` or
+ * `https://explorer.withheld.invalid/<path>`, with its provider label kept.
+ * This does not depend on guessing which part of a URL is secret.
+ */
+const PUBLIC_URLS: string[] = Object.values(PUBLIC_DEFAULTS).flatMap((d) => [...d.rpcs.map((r) => r.url), d.explorer]).map(normalizeBase);
+
+function normalizeBase(url: string): string {
+  try { const u = new URL(url); return `${u.protocol}//${u.host}${u.pathname.replace(/\/+$/, '')}`.toLowerCase(); } catch { return ''; }
+}
+
+export function isShareableUrl(url: string): boolean {
+  let u: URL;
+  try { u = new URL(url); } catch { return false; }
+  const host = u.hostname.toLowerCase();
+  if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host === '::1' || host.endsWith('.invalid')) return true;
+  if (u.username || u.password) return false;
+  const base = `${u.protocol}//${u.host}${u.pathname}`.toLowerCase();
+  return PUBLIC_URLS.some((p) => p !== '' && (base === p || base === `${p}/` || base.startsWith(`${p}/`)));
+}
+
+export const withheldRpcUrl = (index: number) => `https://rpc-${index}.withheld.invalid/`;
+export const WITHHELD_EXPLORER_URL = 'https://explorer.withheld.invalid/';
+const WITHHELD_UNKNOWN_URL = 'https://endpoint.withheld.invalid/';
+
+/**
+ * Maps a request URL made for these endpoints to its shareable form. Used for
+ * source records, recorded exchanges, recording endpoints and request keys, so
+ * new recordings rebuild offline from shareable URLs alone. Idempotent.
+ */
+export function shareableUrlMapper(ep: Pick<ChainEndpoints, 'rpcs' | 'explorerApi'>): (url: string) => string {
+  const explorerBase = ep.explorerApi ? ep.explorerApi.replace(/\/+$/, '') : null;
+  return (url: string) => {
+    const i = ep.rpcs.findIndex((r) => r.url === url);
+    if (i >= 0) return redactUrl(isShareableUrl(url) ? url : withheldRpcUrl(i + 1));
+    if (explorerBase && (url === explorerBase || url.startsWith(`${explorerBase}/`) || url.startsWith(`${explorerBase}?`))) {
+      return redactUrl(isShareableUrl(explorerBase) ? url : WITHHELD_EXPLORER_URL.replace(/\/$/, '') + url.slice(explorerBase.length));
+    }
+    return redactUrl(isShareableUrl(url) ? url : WITHHELD_UNKNOWN_URL);
+  };
+}
+
+/** Shareable form of any URL that appears in a message (CLI errors). */
+export function shareableLooseUrl(url: string): string {
+  return redactUrl(isShareableUrl(url) ? url : WITHHELD_UNKNOWN_URL);
+}
+
+/**
+ * Text fragments of configured, withheld endpoints and the explorer API key,
+ * removed from provider error text before it is analysed or recorded (a
+ * provider error can echo its URL or key). Fragments: userinfo, path segments,
+ * query values, and host labels other than the last two; kept when at least 6
+ * characters with a digit, or at least 16 characters. The explorer API key is
+ * always kept. Public endpoints contribute nothing.
+ */
+export function secretFragments(ep: Pick<ChainEndpoints, 'rpcs' | 'explorerApi'>, explorerApiKey: string | null): string[] {
+  const out = new Set<string>();
+  if (explorerApiKey && explorerApiKey.length >= 4 && explorerApiKey !== 'REDACTED') out.add(explorerApiKey);
+  const take = (v: string) => { if ((v.length >= 6 && /\d/.test(v)) || v.length >= 16) out.add(v); };
+  for (const url of [...ep.rpcs.map((r) => r.url), ...(ep.explorerApi ? [ep.explorerApi] : [])]) {
+    if (isShareableUrl(url)) continue;
+    let u: URL;
+    try { u = new URL(url); } catch { continue; }
+    for (const v of [decodeURIComponent(u.username), decodeURIComponent(u.password)]) if (v) out.add(v);
+    for (const seg of u.pathname.split('/')) if (seg) take(decodeURIComponent(seg));
+    for (const v of u.searchParams.values()) if (v) take(v);
+    for (const label of u.hostname.split('.').slice(0, -2)) take(label);
+  }
+  return [...out].sort((a, b) => b.length - a.length);
+}
+
+/**
  * On-chain identifiers that may appear as URL path segments (transaction hashes,
  * addresses). They are public data and must survive redaction: they are part of
  * a request's identity and of honest provenance. Exact lengths only.

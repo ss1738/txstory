@@ -4,11 +4,11 @@ import { decodeLog, decodeTransferBatch, TOPICS } from '../core/events.js';
 import { normalizeAddress, type Address } from '../core/hex.js';
 import type { BuildInput, ExplorerInput, TokenMetaInput } from '../core/inputs.js';
 import type { SourceRecord, Story } from '../core/types.js';
-import { redactUrl, type EngineConfig, type TraceMode } from './defaults.js';
+import { secretFragments, shareableUrlMapper, type EngineConfig, type TraceMode } from './defaults.js';
 import { fetchCallTrace, type TraceFetch } from './providers/trace.js';
 import { BlockscoutClient } from './providers/blockscout.js';
 import { decodeAbiString, decodeUint8, parseBlock, parseReceipt, parseTx, RpcClient, type RpcCall } from './providers/rpc.js';
-import type { Transport } from './transport.js';
+import { scrubbingTransport, type Transport } from './transport.js';
 
 export type StoryResult =
   | { kind: 'ok'; story: Story }
@@ -37,6 +37,9 @@ export async function assembleStory(chain: ChainKey, hash: string, transport: Tr
   if (network.key !== chain) return { kind: 'unsupported', message: `The network definition "${network.key}" does not match "${chain}".`, sources: [] };
   const ep = config.endpoints[chain];
   if (!ep) return { kind: 'unsupported', message: `No endpoints are configured for network "${chain}".`, sources: [] };
+  // Provider error text can echo a credential: remove known fragments before anything reads it.
+  transport = scrubbingTransport(transport, secretFragments(ep, config.explorerApiKey));
+  const shareable = shareableUrlMapper(ep);
   const rpc = new RpcClient(transport, ep.rpcs);
   const sources: SourceRecord[] = [];
   let n = 0;
@@ -45,7 +48,7 @@ export async function assembleStory(chain: ChainKey, hash: string, transport: Tr
     const r = call.response;
     const notes = [...(call.failedAttempts.length ? [`fell back after: ${call.failedAttempts.join('; ')}`] : []), ...(call.error ? [call.error] : [])];
     sources.push({
-      id, kind: 'rpc', provider: call.endpoint.provider, url: redactUrl(call.endpoint.url), method: label, retrievedAt: r.retrievedAt,
+      id, kind: 'rpc', provider: call.endpoint.provider, url: shareable(call.endpoint.url), method: label, retrievedAt: r.retrievedAt,
       status: call.error ? 'error' : empty ? 'empty' : 'ok', mode: r.mode, sha256: r.sha256, httpStatus: r.httpStatus,
       ...(notes.length ? { note: notes.join(' · ') } : {}),
     });
@@ -63,22 +66,26 @@ export async function assembleStory(chain: ChainKey, hash: string, transport: Tr
     return { kind: 'rpc-unavailable', message: `The ${network.name} RPC endpoint did not answer (${txCall.error ?? rcCall.error}). Try again shortly.`, sources };
   }
   const tx = parseTx(txCall.value);
+  // A null from one node is reported, but not as conclusive while other configured nodes could not answer.
+  const unanswered = (call: RpcCall<unknown>) => (call.unanswered.length
+    ? ` Not conclusive: ${call.unanswered.length} other configured endpoint(s) could not answer (${call.unanswered.join('; ')}).`
+    : '');
   if (!tx) {
-    if (txCall.value === null) return { kind: 'not-found', message: `No transaction with this hash was found on ${network.name}. It may be on another network, not yet propagated, or dropped.`, sources };
+    if (txCall.value === null) return { kind: 'not-found', message: `No transaction with this hash was found on ${network.name} by ${txCall.endpoint.provider}. It may be on another network, not yet propagated, or dropped.${unanswered(txCall)}`, sources };
     return { kind: 'rpc-unavailable', message: 'The RPC returned a transaction object TxStory could not parse.', sources };
   }
   const receipt = parseReceipt(rcCall.value);
   if (!receipt || !tx.blockNumber) {
-    return { kind: 'pending', message: 'The transaction is known to the RPC node but has no receipt yet (pending or not yet included). Story generation needs a mined transaction.', sources };
+    return { kind: 'pending', message: `The transaction is known to the RPC node but has no receipt yet (pending or not yet included). Story generation needs a mined transaction.${rcCall.value === null ? unanswered(rcCall) : ''}`, sources };
   }
 
   // Fast stage is RPC-only so the first render never waits on the explorer.
   const explorerPromise: Promise<{ explorer: ExplorerInput | null; tokens: Record<string, TokenMetaInput>; sources: SourceRecord[] }> = ep.explorerApi && stage === 'full'
-    ? new BlockscoutClient(transport, ep.explorerApi, config.explorerApiKey, config.maxExplorerPages, config.slowExplorerTimeoutMs).fetchAll(hash)
+    ? new BlockscoutClient(transport, ep.explorerApi, config.explorerApiKey, config.maxExplorerPages, config.slowExplorerTimeoutMs, shareable).fetchAll(hash)
     : Promise.resolve({ explorer: null, tokens: {}, sources: [] });
   const traceMode = opts.trace ?? config.trace;
   const tracePromise: Promise<TraceFetch | null> = stage === 'full' && traceMode === 'auto'
-    ? fetchCallTrace(transport, ep.rpcs, hash, config.slowExplorerTimeoutMs)
+    ? fetchCallTrace(transport, ep.rpcs, hash, config.slowExplorerTimeoutMs, shareable)
     : Promise.resolve(null);
   const [blockCall, ex, traceFetch] = await Promise.all([rpc.call('eth_getBlockByNumber', [tx.blockNumber, false]), explorerPromise, tracePromise]);
   const blockId = record('eth_getBlockByNumber', blockCall, blockCall.value === null);

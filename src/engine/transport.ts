@@ -207,15 +207,20 @@ export function replayTransport(fixture: FixtureFile): Transport {
   };
 }
 
-/** Wraps a live transport and captures every exchange for writing a fixture. */
+/**
+ * Wraps a live transport and captures every exchange for writing a recording.
+ * `shareable` maps each request URL to the form stored in the recording and
+ * used for its key (shareableUrlMapper); without it, URLs are only redacted.
+ */
 export class RecordingTransport implements Transport {
   readonly exchanges: FixtureFile['exchanges'] = {};
-  constructor(private inner: Transport) {}
+  constructor(private inner: Transport, private shareable: (url: string) => string = redactUrl) {}
 
   async send(req: TransportRequest): Promise<TransportResponse> {
     const res = await this.inner.send(req);
-    this.exchanges[fixtureRequestKey(req)] = {
-      kind: req.kind, provider: req.provider, method: req.method, url: redactUrl(req.url),
+    const url = this.shareable(req.url);
+    this.exchanges[fixtureRequestKey({ ...req, url })] = {
+      kind: req.kind, provider: req.provider, method: req.method, url,
       ...(req.body === undefined ? {} : { body: req.body }),
       httpStatus: res.httpStatus, retrievedAt: res.retrievedAt, ...(res.failure ? { failure: res.failure } : {}), text: res.text,
     };
@@ -332,4 +337,27 @@ export class CachingTransport implements Transport {
     this.inflight.set(key, p);
     return p;
   }
+}
+
+/**
+ * Removes known secret fragments (see secretFragments) from provider error
+ * responses: non-2xx bodies, transport failure text, and JSON-RPC bodies with
+ * an `error` member. Successful data responses are passed through unchanged,
+ * so the analysed chain data is never altered. The digest of a changed body is
+ * recomputed, so evidence digests describe what was analysed and recorded.
+ */
+export function scrubbingTransport(inner: Transport, fragments: readonly string[]): Transport {
+  if (!fragments.length) return inner;
+  const scrub = (text: string) => fragments.reduce((acc, f) => acc.split(f).join('REDACTED'), text);
+  return {
+    send: async (req) => {
+      const res = await inner.send(req);
+      const isError = !res.ok || !!res.failure || /"error"\s*:/.test(res.text.slice(0, 2000));
+      if (!isError) return res;
+      const text = scrub(res.text);
+      const failure = res.failure === undefined ? undefined : scrub(res.failure);
+      if (text === res.text && failure === res.failure) return res;
+      return { ...res, text, sha256: sha256Hex(text), ...(failure === undefined ? {} : { failure }) };
+    },
+  };
 }

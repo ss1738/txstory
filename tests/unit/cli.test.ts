@@ -48,7 +48,9 @@ describe('CLI conventions', () => {
     const secret = ['sk', 'live', 'abcdefghijklmnopqrstuvwxyz0123'].join('_');
     const r = await run(['networks', '--json', '--rpc', `https://rpc.example/v2/${secret}?apikey=${secret}`], { TXSTORY_RPC_ETHEREUM: `https://user:${secret}@rpc.example/` });
     expect(r.stdout + r.stderr).not.toContain(secret);
-    expect(r.stdout).toContain('REDACTED');
+    // Configured endpoints are withheld entirely in shareable output, host included.
+    expect(r.stdout).toContain('https://rpc-1.withheld.invalid/');
+    expect(r.stdout).not.toContain('rpc.example');
   });
   it('rejects unknown options and commands as usage errors', async () => {
     expect((await run(['explain', '--nope'])).code).toBe(2);

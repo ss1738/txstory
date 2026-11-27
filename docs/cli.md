@@ -18,14 +18,16 @@ The examples below write `txstory` for any of these forms.
 - **`--json`.** Exactly one JSON document goes to stdout, errors included:
   `{"txstory": "<version>", "command", "ok", ...}`. Human text is for reading;
   parse JSON.
-- **Credentials.** Provider URLs are printed only in redacted form
-  (`/v2/REDACTED`, `apikey=REDACTED`).
+- **Credentials.** Configured provider URLs are withheld
+  (`https://rpc-1.withheld.invalid/`); only built-in public, loopback and
+  `.invalid` URLs are printed. See
+  [Provider URLs in shareable output](configuration.md#provider-urls-in-shareable-output).
 - **Exit codes:**
 
 | Code | Meaning |
 |---|---|
 | 0 | Success. Also: replay identical, compare identical, decode unique. |
-| 1 | Result produced but not clean: partial facts with `--strict`, a replay that differs, a comparison with differences, or a decode that is ambiguous or no match. A replay whose evidence is identical and whose output differs only because `--abi` added decodings exits 0; the report says so (`differsOnlyByUserAbis`). |
+| 1 | Result produced but not clean: partial facts with `--strict`, a replay that differs, a comparison with differences, or a decode that is ambiguous or no match. A replay with `--abi` exits 0 when the evidence is identical and the same recording rebuilt without the ABIs reproduces the stored output (`differsOnlyByUserAbis`); the report always states both results. |
 | 2 | Usage error |
 | 3 | Transaction not found, pending, or unsupported |
 | 4 | Providers unavailable |
