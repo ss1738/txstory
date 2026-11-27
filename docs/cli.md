@@ -3,10 +3,13 @@
 The CLI uses the same engine as the web app and the API. From a clone:
 
 ```bash
-npm ci && npm run build
-node dist/node/cli/main.js help      # or, without building: npx tsx src/cli/main.ts help
-npm link                             # optional: puts `txstory` on your PATH (local only, nothing is published)
+npm ci
+npm run -s txstory -- help           # runs from source; no build needed
+npm run build && node dist/node/cli/main.js help   # the compiled CLI
+npm link                             # optional, after the build: puts `txstory` on your PATH (local only, nothing is published)
 ```
+
+The examples below write `txstory` for any of these forms.
 
 ## Conventions (stable)
 
@@ -22,7 +25,7 @@ npm link                             # optional: puts `txstory` on your PATH (lo
 | Code | Meaning |
 |---|---|
 | 0 | Success. Also: replay identical, compare identical, decode unique. |
-| 1 | Result produced but not clean: partial facts with `--strict`, a replay that differs, a comparison with differences, or a decode that is ambiguous or no match |
+| 1 | Result produced but not clean: partial facts with `--strict`, a replay that differs, a comparison with differences, or a decode that is ambiguous or no match. A replay whose evidence is identical and whose output differs only because `--abi` added decodings exits 0; the report says so (`differsOnlyByUserAbis`). |
 | 2 | Usage error |
 | 3 | Transaction not found, pending, or unsupported |
 | 4 | Providers unavailable |
@@ -84,6 +87,7 @@ Offline examples, which run in CI against recordings in this repository (`fixtur
 
 ```console
 $ txstory replay fixtures/devnet/anvil-0xdce671e4526d6d277669b28b2a9108c3f291951eb893a8d716101d94a2640359.json   # exit 0
+$ txstory replay fixtures/devnet/anvil-0x27dbc58bd2861be2ea7264fd2d03aa97510ebc7ff3e00ab59a0bb114cbbe4aab.json --abi fixtures/devnet/Demo.abi.json   # exit 0
 $ txstory explain --recording fixtures/devnet/anvil-0x27dbc58bd2861be2ea7264fd2d03aa97510ebc7ff3e00ab59a0bb114cbbe4aab.json --abi fixtures/devnet/Demo.abi.json   # exit 0
 $ txstory explain --recording fixtures/synthetic/ethereum-0xefb65ab1ab71b94063c0ee8e8c7bdde47b808c19f4e653ed931e3006f4983112.json --json   # exit 0
 $ txstory explain --recording fixtures/synthetic/ethereum-0xfeb89d8c5b4ec361b7e3bd004eef2b156f0d4a9f39515d07377a357935891eff.json --strict   # exit 1

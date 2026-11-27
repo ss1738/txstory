@@ -4,6 +4,36 @@ Version numbers follow semantic versioning in spirit. During 0.x, any minor
 version may change the library surface. Serialized formats are versioned
 independently (see docs/formats.md).
 
+## Unreleased
+
+**Fixed**
+
+- **RPC fallback on node limits.** A JSON-RPC error that describes the
+  answering node (pruned history, an unsupported method, a rate limit) now moves
+  on to the next configured endpoint instead of ending the analysis. Errors about
+  the request itself, such as a reverted `eth_call`, still stop immediately.
+  Found when PublicNode answered a block request with "pruned history
+  unavailable" while other default endpoints were configured.
+- **`replay --abi` no longer reports failure for the result it was asked for.**
+  When the evidence is identical and only the output changed because of the
+  supplied ABIs, the reconstruction report sets `differsOnlyByUserAbis`, the
+  CLI exits 0 (`ok: true` in `--json`), the browser shows "Decoded with your
+  ABIs", and the generic "cannot list differences" note is no longer shown. A
+  recording whose evidence changed still exits 1 with or without `--abi`.
+- After `record`, the CLI suggests the replay command in the form it was started
+  with (`npm run -s txstory --` from a clone).
+
+**Documentation**
+
+- README command blocks use `npm run -s txstory -- ...`, which works from a
+  clone without a build; the HTTP API example uses a shipped example and no
+  longer requires `jq`; endpoint fallback and pre-Byzantium transactions are
+  documented. `docs/cli.md` leads with the same command.
+- `docs/trial.md`: a three-task developer trial with observable success and
+  failure.
+- The bug report template asks for the command, expected and observed
+  behaviour, versions, a safe reproduction and provider details.
+
 ## 0.4.0: released 2026-11-27
 
 Developer-journey release: rebuild recordings in the browser, a static
