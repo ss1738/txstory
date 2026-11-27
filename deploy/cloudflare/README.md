@@ -49,6 +49,12 @@ npx playwright test -c deploy/cloudflare/playwright.config.ts
 `npm run preview` (in this directory) serves `./public` with `wrangler dev` on
 http://127.0.0.1:8788.
 
+CI runs the same checks in the job "cloudflare site config (local wrangler
+runtime, nothing deployed)", building from the commit under test
+(`./build.sh HEAD`). It uses no Cloudflare credentials and fails if any are
+present. Passing it shows the configuration works in Wrangler's local runtime,
+not that a live deployment works.
+
 ## Behaviour to know
 
 - Deep links such as `/start`, `/open` and `/example/<network>/<hash>` return
