@@ -52,7 +52,7 @@ generator (`scripts/synthetic-fixtures.ts`).
 | `endpoints` | The RPC and explorer URLs used, **redacted**. Replay issues requests to these same strings. |
 | `options` | `{trace}`. v1/v2 recordings have no traces, so replay uses `off`. |
 | `config` | `{maxExplorerPages, maxTokenMetadataCalls, explorerApiKeyUsed}`. The key itself is never stored. |
-| `network` | The network definition, for custom networks (validated on read) |
+| `network` | The network definition, for custom networks (validated on read). Replay analyses the recording with exactly this definition, independently of other recordings and of networks registered under the same key. |
 | `exchanges` | Keyed by request digest: `{kind, provider, method, url (redacted), body, httpStatus, retrievedAt, failure?, text}`. `text` is the **full response body**. |
 | `output` | `{stage, kind, storySha256, evidenceSha256, story?}`. `story` is present only with `--embed-story`, or from `/api/recording`. |
 

@@ -218,3 +218,35 @@ test.describe('decode with your ABI (static site)', () => {
     await expect(page.getByTestId('reconstruction')).toContainText('Reproduced');
   });
 });
+
+test.describe('switching between recordings of one network key', () => {
+  test('each opened recording is shown with its own network definition, in any order', async ({ page }) => {
+    const a = readFileSync(DEVNET_FILE, 'utf8');
+    const bJson = JSON.parse(a);
+    bJson.network = { ...bJson.network, name: 'Other devnet', nativeSymbol: 'XYZ', chainId: 4242 };
+    const b = JSON.stringify(bJson);
+    const strip = page.locator('.story-strip .eyebrow');
+    const panel = page.getByTestId('reconstruction');
+    const open = async (name: string, text: string) => {
+      await page.goto('/open');
+      await page.setInputFiles('#recording-file', asFile(name, text));
+      await expect(panel).toContainText(`File: ${name}`);
+    };
+    await open('a.json', a);
+    await expect(strip).toHaveText('Anvil devnet');
+    await expect(panel).toContainText('Reproduced');
+    await open('b.json', b);
+    await expect(strip).toHaveText('Other devnet');
+    await expect(page.locator('#main')).toContainText('XYZ');
+    await expect(panel).toContainText('Differs from the recording');
+    await open('a-again.json', a);
+    await expect(strip).toHaveText('Anvil devnet');
+    await expect(panel).toContainText('Reproduced');
+    // A shipped example after the conflicting file, without reloading the app.
+    await open('b2.json', b);
+    await page.getByRole('link', { name: 'Examples' }).click();
+    await page.locator('.example-grid a').filter({ hasText: 'payAndTry' }).click();
+    await expect(strip).toHaveText('Anvil devnet');
+    await expect(panel).toContainText('Reproduced');
+  });
+});

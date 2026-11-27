@@ -91,7 +91,11 @@ export function createApp(deps: AppDeps): App {
     }
     for (const name of names) {
       try {
-        registerRecordingNetwork(validateRecording(JSON.parse(readFileSync(join(dir, name), 'utf8'))));
+        const rec = validateRecording(JSON.parse(readFileSync(join(dir, name), 'utf8')));
+        // Each replay uses its recording's own network definition; this only makes the key routable.
+        if (registerRecordingNetwork(rec) === 'conflict') {
+          warn({ event: 'recording-network-conflict', file: name, network: rec.chain, reason: 'another recording defines this network key differently; each recording is still analysed with its own definition' });
+        }
       } catch (err) {
         warn({ event: 'recording-rejected', file: name, reason: err instanceof Error ? err.message.slice(0, 200) : 'invalid' });
       }

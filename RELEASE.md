@@ -19,8 +19,9 @@ See CHANGELOG.md for the full list. In short:
 
 ### Validation (MEASURED, implementer validation, not an independent review)
 
-Run on 2026-11-27 on macOS with Node 22.19.0 and npm 11.12.1, from a
-`git archive` export of the branch into an empty directory under
+Run on 2026-11-27 on macOS with Node 22.19.0 and npm 11.12.1. The build,
+`npm test` and browser rows were rerun in the working tree after the network
+isolation fix; the rest come from a `git archive` export of the branch into an empty directory under
 `env -i PATH HOME`. The export has no `.git`, `node_modules`, build output,
 ignored files or private material.
 
@@ -28,8 +29,8 @@ ignored files or private material.
 |---|---|
 | `npm ci`; `npm audit --omit=dev` | Installed from the lockfile; 0 vulnerabilities |
 | `npm run build` (both typechecks, client, node) | Passed |
-| `npm test` | 222 passed (14 files) |
-| `npm run test:e2e`, installed Chrome and `TXSTORY_E2E_BROWSER=chromium` | 39 passed in each (22 server journeys, 17 static site) |
+| `npm test` | 232 passed (15 files) |
+| `npm run test:e2e`, installed Chrome and `TXSTORY_E2E_BROWSER=chromium` | 40 passed in each (22 server journeys, 18 static site) |
 | Offline replay of every shipped recording with outbound network denied (`sandbox-exec`) | 20 of 21 reproduce both digests with nothing missing; the pending case reproduces its "no story" result (exit 3) |
 | README quick start, library example and decoder example, network denied | Ran; output as documented |
 | Static site served by `python3 -m http.server`, driven in Chrome | Example rebuilt, local file opened, Get started shown; 0 requests to other origins, 0 page errors |

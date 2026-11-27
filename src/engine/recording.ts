@@ -21,7 +21,7 @@
  * Schema history: v1 (keys erased hashes; read-only compatibility), v2 (keys
  * keep hashes), v3 (adds endpoints, options, config, engine, network, output).
  */
-import { BUILTIN_CHAIN_KEYS, isChainKey, parseChainFile, registerChain, CHAINS, CHAIN_KEY_PATTERN, type ChainInfo } from '../core/chains.js';
+import { BUILTIN_CHAIN_KEYS, getChain, isChainKey, parseChainFile, registerChain, sameNetwork, CHAINS, CHAIN_KEY_PATTERN, type ChainInfo } from '../core/chains.js';
 import { isTxHash } from '../core/hex.js';
 import type { Story } from '../core/types.js';
 import { assembleStory, type AssembleOptions, type StoryResult } from './analyze.js';
@@ -182,25 +182,49 @@ export function validateRecording(json: unknown): Recording {
 }
 
 /**
- * Register the network a recording embeds (custom networks only), validated
- * with the chain-file rules. Built-in networks are never redefined.
+ * The network a recording is analysed with, as a validated definition. Pure:
+ * it never reads or writes shared state beyond looking up a registered key.
+ *
+ * - A recording that embeds its network (custom networks, schema v3) is
+ *   analysed with exactly that definition, validated by the chain-file rules,
+ *   whatever is registered under the same key.
+ * - Otherwise the registered definition is used: a built-in network, or one
+ *   the caller loaded from a chain file.
+ * - Built-in networks are never redefined (validateRecording rejects that).
  */
-export function registerRecordingNetwork(rec: Recording): void {
-  if (!rec.network || isChainKey(rec.chain)) return;
-  const n = rec.network;
-  const [entry] = parseChainFile({ chains: [{ key: n.key, chainId: n.chainId, name: n.name, nativeSymbol: n.nativeSymbol, feeModel: n.feeModel, rpc: ['http://replay.invalid'], explorerUi: n.explorerUi ?? null, wrappedNative: n.wrappedNative ?? [] }] });
-  if (entry) registerChain(entry.info);
+export function recordingNetwork(rec: Recording): ChainInfo {
+  if (rec.network) {
+    const n = rec.network;
+    const [entry] = parseChainFile({ chains: [{ key: n.key, chainId: n.chainId, name: n.name, nativeSymbol: n.nativeSymbol, feeModel: n.feeModel, rpc: ['http://replay.invalid'], explorerUi: n.explorerUi ?? null, wrappedNative: n.wrappedNative ?? [] }] });
+    if (!entry || entry.info.key !== rec.chain) throw new Error(`recording network "${n.key}" does not match its chain "${rec.chain}"`);
+    return entry.info;
+  }
+  if (isChainKey(rec.chain)) return getChain(rec.chain);
+  throw new Error(`recording is for unknown network "${rec.chain}" (load its chain file, or use a v3 recording that embeds it)`);
 }
 
-/** Replay a recording offline. Never contacts the network. */
+/**
+ * Server startup only: make a recording's custom network known by key, so
+ * its example can be listed and routed. Analysis does not depend on this
+ * (replay always uses recordingNetwork). Returns 'conflict' when another
+ * recording already registered the same key with a different definition;
+ * the first definition stays registered and the caller should report it.
+ */
+export function registerRecordingNetwork(rec: Recording): 'registered' | 'known' | 'conflict' {
+  if (!rec.network) return 'known';
+  const info = recordingNetwork(rec);
+  if (isChainKey(rec.chain)) return sameNetwork(getChain(rec.chain), info) ? 'known' : 'conflict';
+  registerChain(info);
+  return 'registered';
+}
+
 export interface ReplayOptions extends Pick<AssembleOptions, 'userAbi' | 'stage'> {
   /** Called for every request the analysis makes; `recorded` is false when the recording has no answer for it. */
   onRequest?: (req: TransportRequest, recorded: boolean) => void;
 }
 
 export async function replayRecording(rec: Recording, base: EngineConfig, opts: ReplayOptions = {}): Promise<StoryResult> {
-  registerRecordingNetwork(rec);
-  if (!isChainKey(rec.chain)) throw new Error(`recording is for unknown network "${rec.chain}" (load its chain file, or use a v3 recording that embeds it)`);
+  const network = recordingNetwork(rec);
   const endpoints: ChainEndpoints = rec.endpoints
     ? { rpcs: rec.endpoints.rpcs.map((x) => ({ ...x })), explorerApi: rec.endpoints.explorerApi, explorerProvider: 'Blockscout' }
     : recordingEndpoints()[rec.chain] ?? (() => { throw new Error(`no recording endpoints for ${rec.chain}`); })();
@@ -217,6 +241,7 @@ export async function replayRecording(rec: Recording, base: EngineConfig, opts: 
     ? { send: async (req) => { const res = await replay.send(req); observe(req, res.failure !== NOT_RECORDED); return res; } }
     : replay;
   return assembleStory(rec.chain, rec.hash, transport, config, {
+    network,
     stage: opts.stage ?? rec.output?.stage ?? 'full',
     trace: rec.options?.trace ?? 'off',
     ...(opts.userAbi ? { userAbi: opts.userAbi } : {}),

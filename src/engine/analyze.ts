@@ -1,10 +1,10 @@
 import { buildStory, BuildError } from '../core/build.js';
-import { type ChainKey } from '../core/chains.js';
+import { getChain, isChainKey, type ChainInfo, type ChainKey } from '../core/chains.js';
 import { decodeLog, decodeTransferBatch, TOPICS } from '../core/events.js';
 import { normalizeAddress, type Address } from '../core/hex.js';
 import type { BuildInput, ExplorerInput, TokenMetaInput } from '../core/inputs.js';
 import type { SourceRecord, Story } from '../core/types.js';
-import { networkName, redactUrl, type EngineConfig, type TraceMode } from './defaults.js';
+import { redactUrl, type EngineConfig, type TraceMode } from './defaults.js';
 import { fetchCallTrace, type TraceFetch } from './providers/trace.js';
 import { BlockscoutClient } from './providers/blockscout.js';
 import { decodeAbiString, decodeUint8, parseBlock, parseReceipt, parseTx, RpcClient, type RpcCall } from './providers/rpc.js';
@@ -23,10 +23,18 @@ export interface AssembleOptions {
   userAbi?: BuildInput['userAbi'];
   /** Override config.trace for this analysis. */
   trace?: TraceMode;
+  /**
+   * The network definition to analyse with. Replay passes the recording's own
+   * validated definition; otherwise the registered definition for `chain` is used.
+   */
+  network?: ChainInfo;
 }
 
 export async function assembleStory(chain: ChainKey, hash: string, transport: Transport, config: EngineConfig, opts: AssembleOptions = {}): Promise<StoryResult> {
   const stage = opts.stage ?? 'full';
+  const network = opts.network ?? (isChainKey(chain) ? getChain(chain) : null);
+  if (!network) return { kind: 'unsupported', message: `Unknown network "${chain}".`, sources: [] };
+  if (network.key !== chain) return { kind: 'unsupported', message: `The network definition "${network.key}" does not match "${chain}".`, sources: [] };
   const ep = config.endpoints[chain];
   if (!ep) return { kind: 'unsupported', message: `No endpoints are configured for network "${chain}".`, sources: [] };
   const rpc = new RpcClient(transport, ep.rpcs);
@@ -52,11 +60,11 @@ export async function assembleStory(chain: ChainKey, hash: string, transport: Tr
   const rcId = record('eth_getTransactionReceipt', rcCall, rcCall.value === null);
 
   if (txCall.error || rcCall.error) {
-    return { kind: 'rpc-unavailable', message: `The ${networkName(chain)} RPC endpoint did not answer (${txCall.error ?? rcCall.error}). Try again shortly.`, sources };
+    return { kind: 'rpc-unavailable', message: `The ${network.name} RPC endpoint did not answer (${txCall.error ?? rcCall.error}). Try again shortly.`, sources };
   }
   const tx = parseTx(txCall.value);
   if (!tx) {
-    if (txCall.value === null) return { kind: 'not-found', message: `No transaction with this hash was found on ${networkName(chain)}. It may be on another network, not yet propagated, or dropped.`, sources };
+    if (txCall.value === null) return { kind: 'not-found', message: `No transaction with this hash was found on ${network.name}. It may be on another network, not yet propagated, or dropped.`, sources };
     return { kind: 'rpc-unavailable', message: 'The RPC returned a transaction object TxStory could not parse.', sources };
   }
   const receipt = parseReceipt(rcCall.value);
@@ -146,7 +154,7 @@ export async function assembleStory(chain: ChainKey, hash: string, transport: Tr
   const allSources = [...fixed, ...concurrent, ...ex.sources, ...(traceFetch?.sources ?? [])];
   const modes = new Set(allSources.map((s) => s.mode));
   const input: BuildInput = {
-    chain, hash,
+    chain, network, hash,
     rpc: { tx, receipt, block, sourceIds: { tx: txId, receipt: rcId, block: blockId } },
     tokens, tokenMetadataStatus, codeAt, explorer: ex.explorer,
     sources: allSources,

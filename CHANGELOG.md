@@ -60,6 +60,16 @@ developer site, and a contributor path that is tested.
 
 **Fixed**
 
+- **Recordings of one custom network key no longer share a definition.**
+  Replay registered a recording's embedded network in the shared registry and
+  skipped it when the key was already known, so a second recording with the
+  same key but a different name, native symbol, chain id or fee model was
+  analysed with the first one's definition, and verdicts depended on which file
+  was opened first (CLI, server and browser). Each analysis now receives its
+  network definition explicitly (`AssembleOptions.network`, `BuildInput.network`);
+  replay uses the recording's own validated definition and does not write to
+  the registry. The server warns `recording-network-conflict` at startup when
+  two recordings define one key differently.
 - A broken link from `docs/configuration.md` to `.env.example`.
 - `docs/extending.md` referred to a Seaport test against explorer decoding that
   is not in the public suite.

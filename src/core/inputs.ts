@@ -4,7 +4,7 @@ import type { AbiLibrary } from './abi.js';
  * responsible for converting raw JSON into these shapes, defensively.
  */
 import type { Address } from './hex.js';
-import type { ChainKey } from './chains.js';
+import type { ChainKey, ChainInfo } from './chains.js';
 import type { DataMode, SourceRecord } from './types.js';
 
 export interface RpcLogInput {
@@ -119,6 +119,8 @@ export interface ExplorerInput {
 
 export interface BuildInput {
   chain: ChainKey;
+  /** The network this analysis is for. Passed explicitly so concurrent analyses never share a definition. */
+  network: ChainInfo;
   hash: string;
   rpc: {
     tx: RpcTxInput;
