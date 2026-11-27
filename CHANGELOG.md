@@ -4,7 +4,7 @@ Version numbers follow semantic versioning in spirit. During 0.x, any minor
 version may change the library surface. Serialized formats are versioned
 independently (see docs/formats.md).
 
-## 0.4.0: unreleased (prepared 2026-11-27)
+## 0.4.0: released 2026-11-27
 
 Developer-journey release: rebuild recordings in the browser, a static
 developer site, and a contributor path that is tested.
