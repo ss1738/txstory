@@ -13,8 +13,10 @@
 - Human usability is not measured. Traces are tested only via dRPC and a local
   anvil node.
 
-The validation run before publication is recorded in the pull requests and
-in CHANGELOG.md.
+The validation run before publication is recorded in the descriptions and CI
+runs of pull requests #3, #4 and #5. The tree tagged `v0.4.0` still shows this
+file and CHANGELOG.md as they were before publication ("prepared, not
+published"); this later commit corrects the status without moving the tag.
 
 ## 0.3.0: published 2026-11-27
 
